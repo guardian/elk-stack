@@ -152,7 +152,7 @@
                             "apt-get -y update",
                             "apt-get -y install language-pack-en openjdk-7-jre-headless logstash",
 
-                            "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/satterly/elk-stack/master/config/logstash-indexer.conf",
+                            "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
 
                             { "Fn::Join": [ "", [ "sed -i",
                                 " -e 's,@@ELASTICSEARCH,", { "Fn::GetAtt": [ "ElasticsearchLoadBalancer", "DNSName" ]}, ",g'",
@@ -346,12 +346,12 @@
                             "/usr/share/elasticsearch/bin/plugin --install karmi/elasticsearch-paramedic",
                             "/usr/share/elasticsearch/bin/plugin --install royrusso/elasticsearch-HQ",
 
-                            "wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/satterly/elk-stack/master/config/elasticsearch.yml",
+                            "wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml",
                             { "Fn::Join": [ "", [ "sed -i",
                                 " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
                                 " /etc/elasticsearch/elasticsearch.yml" ] ] },
 
-                            "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/satterly/elk-stack/master/config/upstart-elasticsearch.conf",
+                            "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
 
                             "umount /mnt",
                             "mkdir -m 000 /data",
