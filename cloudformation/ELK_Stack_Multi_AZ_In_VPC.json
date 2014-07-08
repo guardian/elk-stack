@@ -362,6 +362,7 @@
                             "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
 
                             "umount /mnt",
+                            "mkdir /data",
                             "mount /dev/xvdb /data",
 
                             "sysctl vm.overcommit_memory=1",
