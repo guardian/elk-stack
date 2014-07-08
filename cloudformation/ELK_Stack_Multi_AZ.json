@@ -384,7 +384,7 @@
             "Description": "Logging endpoint for Logstash TCP input"
         },
         "KibanaURL": {
-            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElasticsearchLoadBalancer", "DNSName" ]}, "/kibana"]] },
+            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElasticsearchLoadBalancer", "DNSName" ]}, "/kibana/#/dashboard/file/logstash.json"]] },
             "Description": "URL for the Kibana Dashboard"
         }
     }
