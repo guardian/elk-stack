@@ -31,10 +31,14 @@
             "AllowedValues": [
                 "t1.micro",
                 "m1.small",
+                "m1.medium",
+                "m1.large",
                 "m3.medium",
                 "m3.large",
                 "m3.xlarge",
-                "m3.2xlarge"
+                "m3.2xlarge",
+                "c1.medium",
+                "c3.large"
             ],
             "ConstraintDescription": "must be a valid EC2 instance type"
         },
@@ -52,10 +56,14 @@
             "AllowedValues": [
                 "t1.micro",
                 "m1.small",
+                "m1.medium",
+                "m1.large",
                 "m3.medium",
                 "m3.large",
                 "m3.xlarge",
-                "m3.2xlarge"
+                "m3.2xlarge",
+                "c1.medium",
+                "c3.large"
             ],
             "ConstraintDescription": "must be a valid EC2 instance type"
         }
@@ -83,7 +91,6 @@
                     "HealthyThreshold": "2"
                 }
             }
-
         },
 
         "LogstashAutoscalingGroup": {
@@ -233,7 +240,7 @@
                     }
                 ],
                 "HealthCheck": {
-                    "Target": "HTTP:9200/",
+                    "Target": "HTTP:9200/_cluster/health",
                     "Timeout": "10",
                     "Interval": "20",
                     "UnhealthyThreshold": "10",
@@ -312,7 +319,6 @@
                             "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
 
                             "umount /mnt",
-                            "mkdir -m 000 /data",
                             "mount /dev/xvdb /data",
 
                             "sysctl vm.overcommit_memory=1",
@@ -322,8 +328,7 @@
                             "tar zxvf kibana-latest.tar.gz",
                             "mv kibana-latest kibana",
 
-                            "rm /etc/nginx/sites-enabled/default",
-                            "mv nginx-sites.conf /etc/nginx/sites-enabled",
+                            "wget -O /etc/init/nginx.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-nginx.conf",
 
                             "start elasticsearch",
                             "start nginx"

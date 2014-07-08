@@ -277,7 +277,7 @@
                     }
                 ],
                 "HealthCheck": {
-                    "Target": "HTTP:9200/",
+                    "Target": "HTTP:9200/_cluster/health",
                     "Timeout": "10",
                     "Interval": "20",
                     "UnhealthyThreshold": "10",
@@ -362,7 +362,6 @@
                             "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
 
                             "umount /mnt",
-                            "mkdir -m 000 /data",
                             "mount /dev/xvdb /data",
 
                             "sysctl vm.overcommit_memory=1",
@@ -371,6 +370,8 @@
                             "wget http://download.elasticsearch.org/kibana/kibana/kibana-latest.tar.gz",
                             "tar zxvf kibana-latest.tar.gz",
                             "mv kibana-latest kibana",
+
+                            "wget -O /etc/init/nginx.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-nginx.conf",
 
                             "start elasticsearch",
                             "start nginx"
