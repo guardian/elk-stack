@@ -388,3 +388,5 @@ cloud.aws.region: @@REGION
 
 action.auto_create_index: true
 action.disable_delete_all_indices: true
+
+script.disable_dynamic: true
