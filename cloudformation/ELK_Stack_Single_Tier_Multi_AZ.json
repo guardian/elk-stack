@@ -68,11 +68,11 @@
                     {
                         "Protocol": "HTTP",
                         "LoadBalancerPort": "80",
-                        "InstancePort": "80"
+                        "InstancePort": "8080"
                     }
                 ],
                 "HealthCheck": {
-                    "Target": "HTTP:9200/_cluster/health",
+                    "Target": "HTTP:8080/__es/",
                     "Timeout": "10",
                     "Interval": "20",
                     "UnhealthyThreshold": "10",
@@ -133,8 +133,9 @@
                             "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
                             "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.1/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list",
 
+                            "add-apt-repository -y ppa:chris-lea/node.js",
                             "apt-get -y update",
-                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs",
+                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs npm",
 
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
                             "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
@@ -202,8 +203,8 @@
                     },
                     {
                         "IpProtocol": "tcp",
-                        "FromPort": "80",
-                        "ToPort": "80",
+                        "FromPort": "8080",
+                        "ToPort": "8080",
                         "SourceSecurityGroupName": "amazon-elb-sg",
                         "SourceSecurityGroupOwnerId": "amazon-elb"
                     },
