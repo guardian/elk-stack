@@ -233,6 +233,8 @@ plugin.mandatory: cloud-aws
 #
 # http.enabled: false
 
+http.host: 127.0.0.1
+
 
 ################################### Gateway ###################################
 
