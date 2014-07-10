@@ -135,7 +135,7 @@
 
                             "add-apt-repository -y ppa:chris-lea/node.js",
                             "apt-get -y update",
-                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs npm",
+                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs",
 
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
                             "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
@@ -164,7 +164,7 @@
                             "wget -O elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz",
                             "tar zxvf elk-stack.tar.gz",
                             "mv elk-stack-master/src logcabin",
-                            "adduser --disabled-password logcabin",
+                            "adduser --disabled-password --gecos \"\" logcabin",
                             "cd logcabin && npm install & cd ..",
                             "chown -R logcabin logcabin",
 
