@@ -7,17 +7,17 @@ exports.setupOAuth = function(express, app, config) {
 
     console.log('Github OAuth2 authentication used')
 
-
+   
     passport.serializeUser(function(user, done) {
       done(null, user)
     })
-
+    
     passport.deserializeUser(function(obj, done) {
       done(null, obj)
     })
 
     var callbackUrl = 'http://' + config.host + '/auth/github/callback'
-
+    
     passport.use(new GithubStrategy({
             clientID: config.oauth_client_id,
             clientSecret: config.oauth_client_secret,
@@ -67,19 +67,13 @@ function nonAuthenticated(config, url) {
 }
 
 function findUser(profile, accessToken, config, callback)  {
-
-    console.log(profile)
-    console.log(accessToken)
-    console.log(config)
-    console.log(callback)
-
     var username = profile.username || 'unknown'
 
     var options = {
         url: profile._json.organizations_url,
         headers: {
             'User-Agent': config.oauth_application_name,
-            'Authorization': 'token ' + accessToken
+            'Authorization': 'token ' + accessToken 
         }
     }
 
@@ -92,7 +86,7 @@ function findUser(profile, accessToken, config, callback)  {
                 }
             }
             console.log('access refused to: ' + username)
-            return callback(false, username + ' is not authorized')
+            return callback(false, username + ' is not authorized') 
         } else {
             console.log('unexpected error: ' + error + ' while trying to access organisations of ' + username)
             console.log('response status code: '  + response.statusCode)

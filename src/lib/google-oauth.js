@@ -67,12 +67,6 @@ function nonAuthenticated(config, url) {
 }
 
 function findUser(profile, accessToken, config, callback)  {
-
-    console.log(profile)
-    console.log(accessToken)
-    console.log(config)
-    console.log(callback)
-
     var username = profile.displayName || 'unknown'
 
     if (profile._json.email.split('@')[1] === 'guardian.co.uk') {
