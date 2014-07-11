@@ -165,7 +165,7 @@
                             "tar zxvf elk-stack.tar.gz",
                             "mv elk-stack-master/src logcabin",
                             "adduser --disabled-password --gecos \"\" logcabin",
-                            "cd logcabin && npm install & cd ..",
+                            "cd logcabin && npm install && cd ..",
                             "chown -R logcabin logcabin",
 
                             "wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js",
@@ -265,7 +265,7 @@
             "Description": "Logging endpoint for Logstash TCP input"
         },
         "KibanaURL": {
-            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkLoadBalancer", "DNSName" ]}, "/kibana/#/dashboard/file/logstash.json"]] },
+            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkLoadBalancer", "DNSName" ]}, "/#/dashboard/file/logstash.json"]] },
             "Description": "URL for the Kibana Dashboard"
         },
         "GoogleOAuthRedirectUrl": {
