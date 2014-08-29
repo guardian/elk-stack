@@ -135,6 +135,7 @@
                 "ImageId": "ami-cb4986bc",
                 "SecurityGroups": [ { "Ref": "ElkSecurityGroup" }, { "Ref": "ElkLoadBalancerSecurityGroup" } ],
                 "InstanceType": { "Ref": "ElkInstanceType" },
+                "IamInstanceProfile": { "Ref": "InstanceProfile" },
                 "AssociatePublicIpAddress": "True",
                 "KeyName": { "Ref": "KeyName" },
                 "UserData": {
@@ -162,6 +163,8 @@
                             "wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml",
                             { "Fn::Join": [ "", [ "sed -i",
                                 " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
+                                " -e 's,@@STACK,", { "Ref": "AWS::StackName" }, ",g'",
+                                " -e 's,@@APP,logger,g'",
                                 " /etc/elasticsearch/elasticsearch.yml" ] ] },
 
                             "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
@@ -294,7 +297,7 @@
                 },
                 "Policies": [
                     {
-                        "PolicyName":"LoggerServerPolicy",
+                        "PolicyName":"ec2-describe-instances",
                         "PolicyDocument": {
                             "Version" : "2012-10-17",
                             "Statement": [
