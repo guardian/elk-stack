@@ -94,6 +94,7 @@
         "ElkInternalLoadBalancer": {
             "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties": {
+                "Scheme": "internal",
                 "CrossZone": true,
                 "Listeners": [
                     {
@@ -356,7 +357,7 @@
 
     "Outputs": {
         "LogstashEndpoint": {
-            "Value": { "Fn::Join": ["", [ { "Fn::GetAtt": [ "ElkLoadBalancer", "DNSName" ]}, ":6379"]] },
+            "Value": { "Fn::Join": ["", [ { "Fn::GetAtt": [ "ElkInternalLoadBalancer", "DNSName" ]}, ":6379"]] },
             "Description": "Logging endpoint for Logstash TCP input"
         },
         "KibanaURL": {
