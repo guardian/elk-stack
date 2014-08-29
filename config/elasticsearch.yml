@@ -162,7 +162,7 @@ path.work: work
 
 # Path to log files:
 #
-path.logs: /var/log
+path.logs: /var/log/elasticsearch/
 
 # Path to where plugins are installed:
 #
