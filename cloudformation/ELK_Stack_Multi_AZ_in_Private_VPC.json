@@ -1,0 +1,371 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+
+    "Description": "ELK Stack - Elasticsearch, Logstash, Kibana",
+
+    "Parameters": {
+
+        "KeyName": {
+            "Default": "bootstrap",
+            "Description": "Name of an existing EC2 KeyPair for SSH access",
+            "Type": "String"
+        },
+        "Stage": {
+            "Description": "Stage",
+            "Type": "String",
+            "Default": "PROD",
+            "AllowedValues": [ "PROD", "CODE" ],
+            "ConstraintDescription": "must be a valid stage eg. PROD, CODE"
+        },
+        "ElkCapacity": {
+            "Description": "Autoscale Size",
+            "Type": "Number",
+            "Default": "1",
+            "MinValue": 1,
+            "MaxValue": 12
+        },
+        "ElkInstanceType": {
+            "Description": "EC2 instance type",
+            "Type": "String",
+            "Default": "m1.large",
+            "AllowedValues": [
+                "t1.micro",
+                "m1.small",
+                "m1.medium",
+                "m1.large",
+                "m3.medium",
+                "m3.large",
+                "m3.xlarge",
+                "m3.2xlarge",
+                "c1.medium",
+                "c3.large"
+            ],
+            "ConstraintDescription": "must be a valid EC2 instance type"
+        },
+        "GoogleOAuthClientId": {
+            "Description": "Google OAuth 2.0 Client ID",
+            "Type": "String"
+        },
+        "GoogleOAuthClientSecret": {
+            "Description": "Google OAuth 2.0 Client Secret",
+            "Type": "String"
+        },
+        "VpcId": {
+            "Description": "ID of the VPC onto which to launch the application eg. vpc-1234abcd",
+            "Type": "String"
+        },
+        "PublicVpcSubnets" : {
+            "Description": "Subnets to use in VPC for public ELB eg. subnet-abcd1234",
+            "Type": "CommaDelimitedList"
+        },
+        "PrivateVpcSubnets" : {
+            "Description": "Subnets to use in VPC for instances eg. subnet-abcd1234",
+            "Type": "CommaDelimitedList"
+        }
+    },
+
+    "Resources": {
+
+        "ElkPublicLoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties": {
+                "CrossZone": true,
+                "Listeners": [
+                    {
+                        "Protocol": "HTTP",
+                        "LoadBalancerPort": "80",
+                        "InstancePort": "8080"
+                    }
+                ],
+                "HealthCheck": {
+                    "Target": "HTTP:8080/__es/",
+                    "Timeout": "10",
+                    "Interval": "20",
+                    "UnhealthyThreshold": "10",
+                    "HealthyThreshold": "2"
+                },
+                "Subnets": { "Ref": "PublicVpcSubnets" },
+                "SecurityGroups": [
+                    { "Ref": "ElkPublicLoadBalancerSecurityGroup" }
+                ]
+            }
+        },
+
+        "ElkInternalLoadBalancer": {
+            "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+            "Properties": {
+                "CrossZone": true,
+                "Listeners": [
+                    {
+                        "Protocol": "TCP",
+                        "LoadBalancerPort": "6379",
+                        "InstancePort": "6379"
+                    }
+                ],
+                "HealthCheck": {
+                    "Target": "TCP:6379",
+                    "Timeout": "10",
+                    "Interval": "20",
+                    "UnhealthyThreshold": "10",
+                    "HealthyThreshold": "2"
+                },
+                "Subnets": { "Ref": "PrivateVpcSubnets" },
+                "SecurityGroups": [
+                    { "Ref": "ElkInternalLoadBalancerSecurityGroup" }
+                ]
+            }
+        },
+
+        "ElkAutoscalingGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": { "Fn::GetAZs": "" },
+                "VPCZoneIdentifier": { "Ref": "PrivateVpcSubnets" },
+                "LaunchConfigurationName": { "Ref": "ElkLaunchConfig" },
+                "MinSize": "1",
+                "MaxSize": "12",
+                "DesiredCapacity": { "Ref": "ElkCapacity" },
+                "HealthCheckType": "ELB",
+                "HealthCheckGracePeriod": 300,
+                "LoadBalancerNames": [ { "Ref": "ElkPublicLoadBalancer" }, { "Ref": "ElkInternalLoadBalancer" } ],
+                "Tags": [
+                    {
+                        "Key": "Stage",
+                        "Value": { "Ref": "Stage" },
+                        "PropagateAtLaunch": "true"
+                    },
+                    {
+                        "Key": "Stack",
+                        "Value": { "Ref": "AWS::StackName" },
+                        "PropagateAtLaunch": "true"
+                    },
+                    {
+                        "Key": "App",
+                        "Value": "logger",
+                        "PropagateAtLaunch": "true"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": { "Fn::Join":[ "-", [ { "Ref": "AWS::StackName" }, "logger" ] ] },
+                        "PropagateAtLaunch": "true"
+                    }
+                ]
+            }
+        },
+
+        "ElkLaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "ImageId": "ami-cb4986bc",
+                "SecurityGroups": [ { "Ref": "ElkSecurityGroup" }, { "Ref": "ElkPublicLoadBalancerSecurityGroup" }, { "Ref": "ElkInternalLoadBalancerSecurityGroup" } ],
+                "InstanceType": { "Ref": "ElkInstanceType" },
+                "AssociatePublicIpAddress": "True",
+                "KeyName": { "Ref": "KeyName" },
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": [ "\n", [
+                            "#!/bin/bash -v",
+
+                            "wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | apt-key add -",
+                            "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
+                            "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.3/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list",
+
+                            "add-apt-repository -y ppa:chris-lea/node.js",
+                            "apt-get -y update",
+                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs",
+
+                            "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
+                            "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
+
+                            "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.1.1",
+                            "/usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head",
+                            "/usr/share/elasticsearch/bin/plugin --install lukas-vlcek/bigdesk",
+                            "/usr/share/elasticsearch/bin/plugin --install karmi/elasticsearch-paramedic",
+                            "/usr/share/elasticsearch/bin/plugin --install royrusso/elasticsearch-HQ",
+
+                            "wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml",
+                            { "Fn::Join": [ "", [ "sed -i",
+                                " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
+                                " /etc/elasticsearch/elasticsearch.yml" ] ] },
+
+                            "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
+
+                            "umount /mnt",
+                            "mkdir /data",
+                            "mount /dev/xvdb /data",
+                            "chown elasticsearch /data",
+
+                            "sysctl vm.overcommit_memory=1",
+
+                            "cd /opt",
+                            "wget -O elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz",
+                            "tar zxvf elk-stack.tar.gz",
+                            "mv elk-stack-master/src logcabin",
+                            "adduser --disabled-password --gecos \"\" logcabin",
+                            "cd logcabin && npm install && cd ..",
+                            "chown -R logcabin logcabin",
+
+                            "wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js",
+                            { "Fn::Join": [ "", [ "sed -i",
+                                " -e 's,@@LOGCABIN_HOST,", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, ",g'",
+                                " -e 's,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g'",
+                                " -e 's,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g'",
+                                " /opt/logcabin/config.js" ] ] },
+                            "wget -O /etc/init/logcabin.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-logcabin.conf",
+
+                            "wget http://download.elasticsearch.org/kibana/kibana/kibana-latest.tar.gz",
+                            "tar zxvf kibana-latest.tar.gz",
+                            "mv kibana-latest kibana",
+
+                            "start logstash",
+                            "start elasticsearch",
+                            "start logcabin"
+                        ] ]
+                    }
+                }
+            }
+        },
+
+        "ElkPublicLoadBalancerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": { "Ref": "VpcId" },
+                "GroupDescription": "Allow access to kibana on public ELB from internet",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "8080",
+                        "ToPort": "8080",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+
+        "ElkInternalLoadBalancerSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "VpcId": { "Ref": "VpcId" },
+                "GroupDescription": "Allow logstash messages to internal ELB",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "6379",
+                        "ToPort": "6379",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "6379",
+                        "ToPort": "6379",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+
+        "ElkSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow kibana from public and logstash from internal ELBs",
+                "VpcId": { "Ref": "VpcId" },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "6379",
+                        "ToPort": "6379",
+                        "SourceSecurityGroupId": { "Ref": "ElkInternalLoadBalancerSecurityGroup" }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "8080",
+                        "ToPort": "8080",
+                        "SourceSecurityGroupId": { "Ref": "ElkPublicLoadBalancerSecurityGroup" }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "77.91.248.0/21"
+                    }
+                ]
+            }
+        },
+
+        "ElkSecurityGroupIngress": {
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": { "Fn::GetAtt": [ "ElkSecurityGroup", "GroupId" ] },
+                "IpProtocol": "tcp",
+                "FromPort": "9300",
+                "ToPort": "9305",
+                "SourceSecurityGroupId": { "Fn::GetAtt": [ "ElkSecurityGroup", "GroupId" ] }
+            }
+        },
+
+        "Role": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [ "ec2.amazonaws.com" ]
+                            }
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyName":"LoggerServerPolicy",
+                        "PolicyDocument": {
+                            "Version" : "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": "ec2:DescribeInstances",
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [ { "Ref": "Role" } ]
+            }
+        }
+    },
+
+    "Outputs": {
+        "LogstashEndpoint": {
+            "Value": { "Fn::Join": ["", [ { "Fn::GetAtt": [ "ElkLoadBalancer", "DNSName" ]}, ":6379"]] },
+            "Description": "Logging endpoint for Logstash TCP input"
+        },
+        "KibanaURL": {
+            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, "/#/dashboard/file/logstash.json"]] },
+            "Description": "URL for the Kibana Dashboard"
+        },
+        "GoogleOAuthRedirectUrl": {
+            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, "/auth/google/callback"]] },
+            "Description": "Redirect URL for the Google Developers Console"
+        }
+    }
+}
