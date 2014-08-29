@@ -160,6 +160,7 @@
                 "ImageId": "ami-cb4986bc",
                 "SecurityGroups": [ { "Ref": "ElkSecurityGroup" }, { "Ref": "ElkPublicLoadBalancerSecurityGroup" }, { "Ref": "ElkInternalLoadBalancerSecurityGroup" } ],
                 "InstanceType": { "Ref": "ElkInstanceType" },
+                "IamInstanceProfile": { "Ref": "InstanceProfile" },
                 "AssociatePublicIpAddress": "True",
                 "KeyName": { "Ref": "KeyName" },
                 "UserData": {
@@ -333,7 +334,7 @@
                 },
                 "Policies": [
                     {
-                        "PolicyName":"LoggerServerPolicy",
+                        "PolicyName":"ec2-describe-instances",
                         "PolicyDocument": {
                             "Version" : "2012-10-17",
                             "Statement": [
