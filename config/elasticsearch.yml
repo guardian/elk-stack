@@ -342,6 +342,8 @@ indices.memory.index_buffer_size: 20%
 # for a step-by-step tutorial.
 
 discovery.type: ec2
+discovery.ec2.tag.Stack: "@@STACK"
+discovery.ec2.tag.App: "@@APP"
 
 cloud.aws.region: @@REGION
 

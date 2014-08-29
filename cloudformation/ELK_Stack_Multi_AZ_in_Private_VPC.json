@@ -187,6 +187,8 @@
                             "wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml",
                             { "Fn::Join": [ "", [ "sed -i",
                                 " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
+                                " -e 's,@@STACK,", { "Ref": "AWS::StackName" }, ",g'",
+                                " -e 's,@@APP,logger,g'",
                                 " /etc/elasticsearch/elasticsearch.yml" ] ] },
 
                             "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
