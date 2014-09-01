@@ -42,14 +42,14 @@ Installation
 
    You can leave the URLs as they are and update them once the ELK stack has been created. Take note of the Client ID and Client Secret as you will need them in the next step.
 
-2. Launch the ELK stack using the AWS console:
-
-   Note: There are two cloudformation templates. One for EC2 classic accounts and one for VPC accounts.
+2. Launch the ELK stack using the AWS console choosing the cloudformation template relevant to your AWS account ie. either the [EC2 classic](cloudformation/ELK_Stack_Multi_AZ.json) template, the template for [standard VPCs](cloudformation/ELK_Stack_Multi_AZ_In_VPC.json) or the template for [VPCs with public and private subnets](cloudformation/ELK_Stack_Multi_AZ_in_Private_VPC.json).
 
 3. Once the ELK stack has launched revisit the Google developer console and update the URLs copying the output for `GoogleOAuthRedirectURL` to `AUTHORIZED REDIRECT URI` and the same URL but without to path to `AUTHORISED JAVASCRIPT ORIGINS`.
 
 Configuration
 -------------
+
+Logstash grok patterns can be tested online at https://grokdebug.herokuapp.com/
 
 The Kibana dashboards are configured via the GUI.
 
