@@ -5,13 +5,17 @@
 
     "Parameters": {
 
+        "Stack": {
+            "Description": "Stack applied as a tag",
+            "Type": "String"
+        },
         "KeyName": {
             "Default": "bootstrap",
             "Description": "Name of an existing EC2 KeyPair for SSH access",
             "Type": "String"
         },
         "Stage": {
-            "Description": "Stage",
+            "Description": "Stage applied as a tag",
             "Type": "String",
             "Default": "PROD",
             "AllowedValues": [ "PROD", "CODE" ],
@@ -33,6 +37,7 @@
                 "m1.small",
                 "m1.medium",
                 "m1.large",
+                "m2.xlarge",
                 "m3.medium",
                 "m3.large",
                 "m3.xlarge",
@@ -137,17 +142,17 @@
                     },
                     {
                         "Key": "Stack",
-                        "Value": { "Ref": "AWS::StackName" },
+                        "Value": { "Ref": "Stack" },
                         "PropagateAtLaunch": "true"
                     },
                     {
                         "Key": "App",
-                        "Value": "logger",
+                        "Value": "kibana",
                         "PropagateAtLaunch": "true"
                     },
                     {
                         "Key": "Name",
-                        "Value": { "Fn::Join":[ "-", [ { "Ref": "AWS::StackName" }, "logger" ] ] },
+                        "Value": "kibana",
                         "PropagateAtLaunch": "true"
                     }
                 ]
@@ -188,8 +193,8 @@
                             "wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml",
                             { "Fn::Join": [ "", [ "sed -i",
                                 " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
-                                " -e 's,@@STACK,", { "Ref": "AWS::StackName" }, ",g'",
-                                " -e 's,@@APP,logger,g'",
+                                " -e 's,@@STACK,", { "Ref": "Stack" }, ",g'",
+                                " -e 's,@@APP,kibana,g'",
                                 " /etc/elasticsearch/elasticsearch.yml" ] ] },
 
                             "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
