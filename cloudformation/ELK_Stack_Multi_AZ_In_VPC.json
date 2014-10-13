@@ -57,6 +57,10 @@
         "VpcSubnets" : {
             "Description": "Subnets to use in VPC eg. subnet-abcd1234",
             "Type": "CommaDelimitedList"
+        },
+        "HostedZoneName": {
+            "Description": "Route53 Hosted Zone in which kibana aliases will be created",
+            "Type": "String"
         }
     },
 
@@ -317,6 +321,31 @@
             "Properties": {
                 "Path": "/",
                 "Roles": [ { "Ref": "Role" } ]
+            }
+        },
+        "KibanaAlias": {
+            "Type" : "AWS::Route53::RecordSetGroup",
+            "Properties" : {
+                "HostedZoneName" : { "Ref": "HostedZoneName" },
+                "Comment" : "Alias to kibana elb",
+                "RecordSets" : [
+                    {
+                        "Name" : { "Fn::Join": ["", [ "kibana.", {"Ref": "HostedZoneName"} ]] },
+                        "Type" : "A",
+                        "AliasTarget" : {
+                           "HostedZoneId" : { "Fn::GetAtt" : ["ElkLoadBalancer", "CanonicalHostedZoneNameID"] },
+                            "DNSName" : { "Fn::GetAtt" : ["ElkLoadBalancer","DNSName"] }
+                        }
+                    },
+                    {
+                        "Name" : { "Fn::Join": ["", [ "elasticsearch.", {"Ref": "HostedZoneName"} ]] },
+                        "Type" : "A",
+                        "AliasTarget" : {
+                           "HostedZoneId" : { "Fn::GetAtt" : ["ElkLoadBalancer", "CanonicalHostedZoneNameID"] },
+                            "DNSName" : { "Fn::GetAtt" : ["ElkLoadBalancer","DNSName"] }
+                        }
+                    }
+                ]
             }
         }
     },
