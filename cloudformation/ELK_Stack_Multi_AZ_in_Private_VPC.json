@@ -380,7 +380,7 @@
                         }
                     },
                     {
-                        "Name" : { "Fn::Join": ["", [ "elasticsearch.", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": ["", [ "logstash.", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
