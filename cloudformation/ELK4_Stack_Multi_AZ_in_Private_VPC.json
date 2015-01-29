@@ -82,11 +82,11 @@
                     {
                         "Protocol": "HTTP",
                         "LoadBalancerPort": "80",
-                        "InstancePort": "8080"
+                        "InstancePort": "4180"
                     }
                 ],
                 "HealthCheck": {
-                    "Target": "HTTP:8080/__es/",
+                    "Target": "HTTP:4180/ping",
                     "Timeout": "10",
                     "Interval": "20",
                     "UnhealthyThreshold": "10",
@@ -182,7 +182,7 @@
 
                             "add-apt-repository -y ppa:chris-lea/node.js",
                             "apt-get -y update",
-                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs",
+                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch golang",
 
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
                             "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
@@ -206,31 +206,29 @@
 
                             "sysctl vm.overcommit_memory=1",
 
+                            "adduser --system --group --disabled-password kibana",
                             "cd /opt",
-                            "wget -O elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz",
-                            "tar zxvf elk-stack.tar.gz",
-                            "mv elk-stack-master/src logcabin",
-                            "adduser --disabled-password --gecos \"\" logcabin",
-                            "cd logcabin && npm install && cd ..",
-                            "chown -R logcabin logcabin",
+                            "wget -O- https://github.com/bitly/google_auth_proxy/releases/download/v1.0/google_auth_proxy-1.0.linux-amd64.go1.3.tar.gz | tar zxvf -",
+                            "ln -s /opt/google_auth_proxy* /opt/google_auth_proxy",
 
-                            "wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js",
+                            "wget -O /etc/google_auth_proxy.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/google_auth_proxy.conf",
                             { "Fn::Join": [ "", [ "sed -i",
-                                " -e 's,@@LOGCABIN_HOST,", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, ",g'",
-                                " -e 's,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g'",
-                                " -e 's,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g'",
-                                " /opt/logcabin/config.js" ] ] },
-                            "wget -O /etc/init/logcabin.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-logcabin.conf",
+                                " -e s,@@KIBANA_HOSTNAME,", { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] }, ",",
+                                " -e s,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",",
+                                " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",",
+                                " -e s,@@COOKIE_SECRET,$(< /dev/urandom tr -dc A-Za-z0-9_\\!\\@\\#\\$\\%\\^\\&\\*\\(\\)-+= | head -c 32),",
+                                " /etc/google_auth_proxy.conf" ] ] },
+                            "wget -O /etc/init/google_auth_proxy.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-google-auth-proxy.conf",
 
                             "cd /opt",
                             "wget -O- https://download.elasticsearch.org/kibana/kibana/kibana-4.0.0-beta3.tar.gz | tar zxvf -",
                             "ln -s /opt/kibana-* /opt/kibana",
-                            "# wget -O /etc/init/kibana.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-kibana.conf",
+                            "wget -O /etc/init/kibana.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-kibana.conf",
 
                             "start logstash",
                             "start elasticsearch",
-                            "# start kibana",
-                            "start logcabin"
+                            "start google_auth_proxy",
+                            "start kibana"
                         ] ]
                     }
                 }
@@ -253,8 +251,8 @@
                 "SecurityGroupEgress": [
                     {
                         "IpProtocol": "tcp",
-                        "FromPort": "8080",
-                        "ToPort": "8080",
+                        "FromPort": "4180",
+                        "ToPort": "4180",
                         "CidrIp": "0.0.0.0/0"
                     }
                 ]
@@ -396,11 +394,11 @@
             "Description": "Logging endpoint for Logstash TCP input"
         },
         "KibanaURL": {
-            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, "/#/dashboard/file/logstash.json"]] },
+            "Value": { "Fn::Join": ["", ["http://", { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] }, "/"]] },
             "Description": "URL for the Kibana Dashboard"
         },
         "GoogleOAuthRedirectUrl": {
-            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, "/auth/google/callback"]] },
+            "Value": { "Fn::Join": ["", ["http://", { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] }, "/oauth2/callback"]] },
             "Description": "Redirect URL for the Google Developers Console"
         }
     }
