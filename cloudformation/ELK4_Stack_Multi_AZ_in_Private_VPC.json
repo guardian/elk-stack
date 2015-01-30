@@ -216,7 +216,7 @@
 
                             "wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/kibana4-beta3/config/config.js",
                             { "Fn::Join": [ "", [ "sed -i",
-                                " -e s,@@KIBANA_HOSTNAME,", { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] }, ",",
+                                " -e s,@@LOGCABIN_HOST,", { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] }, ",",
                                 " -e s,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",",
                                 " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",",
                                 " -e s,@@COOKIE_SECRET,$(< /dev/urandom tr -dc A-Za-z0-9_\\!\\@\\#\\$\\%\\^\\&\\*\\(\\)-+= | head -c 32),",
