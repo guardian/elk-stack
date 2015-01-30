@@ -15,7 +15,7 @@ Security
 
 Only the Logstash indexer and the application proxy ports are exposed on the ELB and all requests to the application proxy for Kibana or Elasticsearch, except the ELB healthcheck (see below), are authenticated using Google OAuth.
 
-Elasticsearch is configured to listen only on the local loopback address and has dynamic scripting disabled to address security concerns with [remote code execution][4].
+Elasticsearch is configured to listen only on the local loopback address and dynamic scripting is sandboxed (by default) to address security concerns with [remote code execution][4].
 
 Healthcheck
 -----------
