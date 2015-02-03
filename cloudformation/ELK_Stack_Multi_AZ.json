@@ -56,9 +56,13 @@
             "Default": "guardian.co.uk"
         },
         "HostedZoneName": {
-            "Description": "Route53 Hosted Zone in which kibana aliases will be created",
+            "Description": "Route53 Hosted Zone in which kibana aliases will be created. Leave blank for no ALIAS.",
             "Type": "String"
         }
+    },
+
+    "Conditions": {
+        "HasDNS": { "Fn::Not" : [{"Fn::Equals" : [{"Ref" : "HostedZoneName"}, "" ] } ] }
     },
 
     "Resources": {
@@ -272,6 +276,7 @@
         },
         "KibanaAlias": {
             "Type" : "AWS::Route53::RecordSetGroup",
+            "Condition": "HasDNS",
             "Properties" : {
                 "HostedZoneName" : { "Ref": "HostedZoneName" },
                 "Comment" : "Alias to kibana elb",
