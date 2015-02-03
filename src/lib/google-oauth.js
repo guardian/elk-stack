@@ -69,7 +69,7 @@ function nonAuthenticated(config, url) {
 function findUser(profile, accessToken, config, callback)  {
     var username = profile.displayName || 'unknown'
 
-    if (profile._json.email.split('@')[1] === 'guardian.co.uk') {
+    if (profile._json.email.split('@')[1] === config.allowed_domain) {
         return callback(true, username)
     } else {
         console.log('access refused to: ' + username)
