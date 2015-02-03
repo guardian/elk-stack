@@ -8,6 +8,7 @@ module.exports =  {
     'oauth_client_secret': 'z6t0aUbgrnIp3Ot4DtjMTB2A',
     // 'oauth_client_id': 'fd1e58de5907553c00ca',
     // 'oauth_client_secret': '6c10760f16b40dd161268be0ed04eafaa6e1614d',
+    'allowed_domain': 'guardian.co.uk',
     'es_host': 'localhost',
     'es_port': 9200
 }
