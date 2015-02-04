@@ -65,6 +65,19 @@
         "HasDNS": { "Fn::Not" : [{"Fn::Equals" : [{"Ref" : "HostedZoneName"}, "" ] } ] }
     },
 
+    "Mappings" : {
+        "RegionMap" : {
+            "us-east-1" :      { "ImageId": "ami-408c7f28" },
+            "us-west-2" :      { "ImageId": "ami-f34032c3" },
+            "us-west-1" :      { "ImageId": "ami-a26265e7" },
+            "eu-west-1" :      { "ImageId": "ami-cb4986bc" },
+            "ap-southeast-1" : { "ImageId": "ami-506d3102" },
+            "ap-southeast-2" : { "ImageId": "ami-7bb8dd41" },
+            "ap-northeast-1" : { "ImageId": "ami-19dd9218" },
+            "sa-east-1" :      { "ImageId": "ami-8f0aa692" }
+        }
+    },
+
     "Resources": {
 
         "ElkLoadBalancer": {
@@ -133,7 +146,7 @@
         "ElkLaunchConfig": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
-                "ImageId": "ami-cb4986bc",
+                "ImageId": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "ImageId" ]},
                 "SecurityGroups": [ { "Ref": "ElkSecurityGroup" } ],
                 "InstanceType": { "Ref": "ElkInstanceType" },
                 "IamInstanceProfile": { "Ref": "InstanceProfile" },
