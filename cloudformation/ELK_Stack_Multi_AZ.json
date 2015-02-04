@@ -30,6 +30,9 @@
             "Default": "m1.large",
             "AllowedValues": [
                 "t1.micro",
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
                 "m1.small",
                 "m1.medium",
                 "m1.large",
