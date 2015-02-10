@@ -10,6 +10,9 @@ set -e
 # set BUILD_NUMBER to DEV if not in TeamCity
 [ -z "${BUILD_NUMBER}" ] && BUILD_NUMBER="DEV"
 
+# set BUILD_BRANCH if not in TeamCity
+[ -z "${BUILD_BRANCH}" ] && BUILD_BRANCH="DEV"
+
 # set BUILD_NUMBER to DEV if not in TeamCity
 BUILD_NAME=${TEAMCITY_PROJECT_NAME}-${TEAMCITY_BUILDCONF_NAME}
 [ -z "${TEAMCITY_BUILDCONF_NAME}" -o -z "${TEAMCITY_PROJECT_NAME}" ] && BUILD_NAME="unknown"
@@ -31,4 +34,5 @@ echo "Account numbers for AMI: $ACCOUNT_NUMBERS"
 echo "Building ELK AMI" 1>&2
 ${PACKER_HOME}/packer build -color=false \
   -var "build_number=${BUILD_NUMBER}" -var "build_name=${BUILD_NAME}" \
-  -var "account_numbers=${ACCOUNT_NUMBERS}" packer/elk.json
+  -var "build_branch=${BUILD_BRANCH}" -var "account_numbers=${ACCOUNT_NUMBERS}" \
+  packer/elk.json

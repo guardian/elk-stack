@@ -4,7 +4,8 @@
       "s3_bucket": "workflow-amis",
       "build_number": "DEV",
       "build_name": null,
-      "account_numbers": ""
+      "account_numbers": "",
+      "build_branch": "DEV"
   },
   "builders": [
     {
@@ -17,7 +18,7 @@
       "ami_name": "elk-stack_{{user `build_number`}}_{{isotime \"2006-01-02\"}}",
       "ami_description": "AMI for ELK stack built by TeamCity: {{user `build_name`}}#{{user `build_number`}}",
       "ami_users": "{{user `account_numbers`}}",
-      "tags": {"Name": "{{user `build_name`}}", "Build":"{{user `build_number`}}"}
+      "tags": {"Name": "{{user `build_name`}}", "Build":"{{user `build_number`}}", "Branch":"{{user `build_branch`}}"}
     }
   ],
 
