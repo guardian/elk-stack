@@ -1,7 +1,10 @@
 {
   "variables": {
       "account_id": "753338109777",
-      "s3_bucket": "workflow-amis"
+      "s3_bucket": "workflow-amis",
+      "build_number": "DEV",
+      "build_name": null,
+      "account_numbers": ""
   },
   "builders": [
     {
@@ -10,8 +13,10 @@
       "source_ami": "ami-274ecc50",
       "instance_type": "m3.medium",
       "ssh_username": "ubuntu",
-      "ami_name": "elk-base_{{isotime \"2006-01-02\"}}",
-      "ami_users": ["753338109777", "743583969668"]
+      "run_tags": {"Stage":"INFRA", "Stack":"packer", "App": "{{user `build_name`}}"},
+      "ami_name": "elk-stack_{{user `build_number`}}_{{isotime \"2006-01-02\"}}",
+      "ami_description": "AMI for ELK stack built by TeamCity: {{user `build_name`}}#{{user `build_number`}}",
+      "ami_users": "{{user `account_numbers`}}"
     }
   ],
 
