@@ -17,4 +17,4 @@ fi
 
 # now build
 echo "Building ELK AMI" 1>&2
-${PACKER_HOME}/packer build -color=false elk.json
+${PACKER_HOME}/packer build -color=false packer/elk.json
