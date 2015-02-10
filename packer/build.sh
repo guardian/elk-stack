@@ -8,6 +8,7 @@ set -e
 [ -z "${PACKER_HOME}" ] && PACKER_HOME=/opt/packer
 
 # ensure that we have AWS credentials (configure in TeamCity normally)
+# note that we don't actually use them in the script, the packer command does
 if [ -z "${AWS_ACCESS_KEY}" -o -z "${AWS_SECRET_KEY}" ]
 then
   echo "AWS_ACCESS_KEY and AWS_SECRET_KEY environment variables must be set" > &2
