@@ -8,11 +8,11 @@ set -e
 [ -z "${PACKER_HOME}" ] && PACKER_HOME="/opt/packer"
 
 # set BUILD_NUMBER to DEV if not in TeamCity
-[ -z "${BUILD_NUMBER}"] && BUILD_NUMBER="DEV"
+[ -z "${BUILD_NUMBER}" ] && BUILD_NUMBER="DEV"
 
 # set BUILD_NUMBER to DEV if not in TeamCity
 BUILD_NAME=${TEAMCITY_PROJECT_NAME}-${TEAMCITY_BUILDCONF_NAME}
-[ -z "${TEAMCITY_BUILDCONF_NAME}" -o -z "${TEAMCITY_PROJECT_NAME}"] && BUILD_NAME="unknown"
+[ -z "${TEAMCITY_BUILDCONF_NAME}" -o -z "${TEAMCITY_PROJECT_NAME}" ] && BUILD_NAME="unknown"
 
 # ensure that we have AWS credentials (configure in TeamCity normally)
 # note that we don't actually use them in the script, the packer command does
@@ -29,6 +29,6 @@ echo "Account numbers for AMI: $ACCOUNT_NUMBERS"
 
 # now build
 echo "Building ELK AMI" 1>&2
-${PACKER_HOME}/packer build -color=false packer/elk.json \
+${PACKER_HOME}/packer build -color=false \
   -var "build_number=${BUILD_NUMBER}" -var "build_name=${BUILD_NAME}" \
-  -var "account_numbers=${ACCOUNT_NUMBERS}
+  -var "account_numbers=${ACCOUNT_NUMBERS}" packer/elk.json
