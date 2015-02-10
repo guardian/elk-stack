@@ -11,10 +11,10 @@ set -e
 # note that we don't actually use them in the script, the packer command does
 if [ -z "${AWS_ACCESS_KEY}" -o -z "${AWS_SECRET_KEY}" ]
 then
-  echo "AWS_ACCESS_KEY and AWS_SECRET_KEY environment variables must be set" > &2
+  echo "AWS_ACCESS_KEY and AWS_SECRET_KEY environment variables must be set" 1>&2
   exit 1
 fi
 
 # now build
-echo "Building ELK AMI"
+echo "Building ELK AMI" 1>&2
 ${PACKER_HOME}/packer build -color=false elk.json
