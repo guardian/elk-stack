@@ -209,9 +209,10 @@
                                 " -e 's,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g'",
                                 " /opt/logcabin/config.js.template > /opt/logcabin/config.js" ] ] },
 
-                            "restart elasticsearch",
+                            "start elasticsearch",
                             "restart logstash",
-                            "restart logcabin"
+                            "restart logstash-web",
+                            "start logcabin"
                         ] ]
                     }
                 }
