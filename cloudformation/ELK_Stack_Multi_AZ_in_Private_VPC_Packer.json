@@ -70,6 +70,10 @@
         "HostedZoneName": {
             "Description": "Route53 Hosted Zone in which kibana aliases will be created",
             "Type": "String"
+        },
+        "PackerAMI": {
+            "Description": "The AMI produced by the elk.json packer build in github.com/guardian/elk-stack",
+            "Type": "String"
         }
     },
 
@@ -166,7 +170,7 @@
         "ElkLaunchConfig": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
-                "ImageId": "ami-cb4986bc",
+                "ImageId": { "Ref": "PackerAMI" },
                 "SecurityGroups": [ { "Ref": "ElkSecurityGroup" }, { "Ref": "ElkPublicLoadBalancerSecurityGroup" }, { "Ref": "ElkInternalLoadBalancerSecurityGroup" } ],
                 "InstanceType": { "Ref": "ElkInstanceType" },
                 "IamInstanceProfile": { "Ref": "InstanceProfile" },
