@@ -67,13 +67,14 @@
             "Description": "Subnets to use in VPC for instances eg. subnet-abcd1234",
             "Type": "CommaDelimitedList"
         },
-        "HostedZoneName": {
-            "Description": "Route53 Hosted Zone in which kibana aliases will be created",
-            "Type": "String"
-        },
         "PackerAMI": {
             "Description": "The AMI produced by the elk.json packer build in github.com/guardian/elk-stack",
             "Type": "String"
+        },
+        "SSLCertificateId": {
+          "Description": "ARN of the SSL certificate for *.gutools.co.uk",
+          "Type": "String",
+          "Default": "arn:aws:iam::743583969668:server-certificate/sites.gutools.co.uk-exp2015-10-20"
         }
     },
 
@@ -85,9 +86,12 @@
                 "CrossZone": true,
                 "Listeners": [
                     {
-                        "Protocol": "HTTP",
-                        "LoadBalancerPort": "80",
-                        "InstancePort": "8080"
+                        "Protocol": "HTTPS",
+                        "LoadBalancerPort": "443",
+                        "InstancePort": "8080",
+                        "SSLCertificateId": {
+                          "Ref": "SSLCertificateId"
+                        }
                     }
                 ],
                 "HealthCheck": {
@@ -210,8 +214,8 @@
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
-                        "FromPort": "80",
-                        "ToPort": "80",
+                        "FromPort": "443",
+                        "ToPort": "443",
                         "CidrIp": "0.0.0.0/0"
                     }
                 ],
@@ -272,7 +276,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": "22",
                         "ToPort": "22",
-                        "CidrIp": "77.91.248.0/21"
+                        "CidrIp": "10.0.0.0/8"
                     }
                 ]
             }
@@ -327,31 +331,6 @@
                 "Path": "/",
                 "Roles": [ { "Ref": "Role" } ]
             }
-        },
-        "KibanaAlias": {
-            "Type" : "AWS::Route53::RecordSetGroup",
-            "Properties" : {
-                "HostedZoneName" : { "Ref": "HostedZoneName" },
-                "Comment" : "Alias to kibana elb",
-                "RecordSets" : [
-                    {
-                        "Name" : { "Fn::Join": ["", [ "kibana.", {"Ref": "HostedZoneName"} ]] },
-                        "Type" : "A",
-                        "AliasTarget" : {
-                           "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
-                            "DNSName" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer","DNSName"] }
-                        }
-                    },
-                    {
-                        "Name" : { "Fn::Join": ["", [ "logstash.", {"Ref": "HostedZoneName"} ]] },
-                        "Type" : "A",
-                        "AliasTarget" : {
-                           "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
-                            "DNSName" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer","DNSName"] }
-                        }
-                    }
-                ]
-            }
         }
     },
 
@@ -359,10 +338,6 @@
         "LogstashEndpoint": {
             "Value": { "Fn::Join": ["", [ { "Fn::GetAtt": [ "ElkInternalLoadBalancer", "DNSName" ]}, ":6379"]] },
             "Description": "Logging endpoint for Logstash TCP input"
-        },
-        "KibanaURL": {
-            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, "/#/dashboard/file/logstash.json"]] },
-            "Description": "URL for the Kibana Dashboard"
         },
         "GoogleOAuthRedirectUrl": {
             "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, "/auth/google/callback"]] },
