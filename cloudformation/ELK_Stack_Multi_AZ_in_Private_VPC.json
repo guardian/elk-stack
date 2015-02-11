@@ -53,7 +53,8 @@
         },
         "GoogleOAuthClientSecret": {
             "Description": "Google OAuth 2.0 Client Secret",
-            "Type": "String"
+            "Type": "String",
+            "NoEcho": true
         },
         "AllowedDomain": {
             "Description": "Google apps domain eg. gmail.com or example.com",
