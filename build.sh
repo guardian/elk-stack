@@ -4,6 +4,10 @@
 # die if any command fails
 set -e
 
+DEBUG=""
+# set DEBUG flag if not in TeamCity
+[ -z "${BUILD_NUMBER}" ] && DEBUG="-debug"
+
 # set PACKER_HOME if it isn't already provided
 [ -z "${PACKER_HOME}" ] && PACKER_HOME="/opt/packer"
 
@@ -32,7 +36,7 @@ echo "Account numbers for AMI: $ACCOUNT_NUMBERS"
 
 # now build
 echo "Building ELK AMI" 1>&2
-${PACKER_HOME}/packer build -color=false \
+${PACKER_HOME}/packer build $DEBUG -color=false \
   -var "build_number=${BUILD_NUMBER}" -var "build_name=${BUILD_NAME}" \
   -var "build_branch=${BUILD_BRANCH}" -var "account_numbers=${ACCOUNT_NUMBERS}" \
   packer/elk.json
