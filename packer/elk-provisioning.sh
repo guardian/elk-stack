@@ -21,6 +21,10 @@ apt-get --yes --force-yes install language-pack-en build-essential openjdk-7-jre
 /usr/share/elasticsearch/bin/plugin --install karmi/elasticsearch-paramedic
 /usr/share/elasticsearch/bin/plugin --install royrusso/elasticsearch-HQ
 
+## Install logstash config
+wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf
+sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf
+
 ## Mount the ephemeral storage on /data
 # Create /data
 mkdir /data
@@ -49,6 +53,8 @@ echo "vm.overcommit_memory=1" > /etc/sysctl.d/70-vm-overcommit
     npm install
   )
   chown -R logcabin logcabin
+  # TODO: Fix this ugly hack to convert this to https
+  sed -i s#http://#https://# /opt/logcabin/lib/google-oauth.js
 
   wget http://download.elasticsearch.org/kibana/kibana/kibana-latest.tar.gz
   tar zxvf kibana-latest.tar.gz

@@ -71,6 +71,11 @@
             "Description": "The AMI produced by the elk.json packer build in github.com/guardian/elk-stack",
             "Type": "String"
         },
+        "Hostname": {
+            "Description": "The public hostname to be used - if blank, then the public load balancer name will be used",
+            "Type": "String",
+            "Default": ""
+        },
         "SSLCertificateId": {
           "Description": "ARN of the SSL certificate for *.gutools.co.uk",
           "Type": "String",
@@ -78,8 +83,11 @@
         }
     },
 
-    "Resources": {
+    "Conditions": {
+        "HostnameSpecified": {"Fn::Not": [{"Fn::Equals": [{"Ref": "Hostname"}, ""]}]}
+    },
 
+    "Resources": {
         "ElkPublicLoadBalancer": {
             "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties": {
@@ -184,6 +192,7 @@
                     "Fn::Base64": {
                         "Fn::Join": [ "\n", [
                             "#!/bin/bash -v",
+                            "chown elasticsearch /data",
 
                             { "Fn::Join": [ "", [ "sed",
                                 " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
@@ -192,13 +201,16 @@
                                 " /etc/elasticsearch/elasticsearch.yml.template > /etc/elasticsearch/elasticsearch.yml" ] ] },
 
                             { "Fn::Join": [ "", [ "sed",
-                                " -e 's,@@LOGCABIN_HOST,", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, ",g'",
+                                " -e 's,@@LOGCABIN_HOST,", {"Fn::If": ["HostnameSpecified",
+                                  { "Ref": "Hostname" },
+                                  { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
+                                  ]}, ",g'",
                                 " -e 's,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g'",
                                 " -e 's,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g'",
                                 " /opt/logcabin/config.js.template > /opt/logcabin/config.js" ] ] },
 
-                            "restart logstash",
                             "restart elasticsearch",
+                            "restart logstash",
                             "restart logcabin"
                         ] ]
                     }
