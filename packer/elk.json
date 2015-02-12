@@ -33,6 +33,11 @@
       "destination": "/tmp"
     },
     {
+      "type": "file",
+      "source": "../src",
+      "destination": "/tmp"
+    },
+    {
       "type": "shell",
       "script": "elk-provisioning.sh",
       "execute_command": "{{ .Vars }} sudo -E bash -x '{{ .Path }}'"

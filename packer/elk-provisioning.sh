@@ -44,9 +44,7 @@ echo "vm.overcommit_memory=1" > /etc/sysctl.d/70-vm-overcommit
 ## Install Kibana / Logcabin
 (
   cd /opt
-  wget -O elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz
-  tar zxvf elk-stack.tar.gz
-  mv elk-stack-master/src logcabin
+  cp -r /tmp/src /opt/logcabin
   adduser --disabled-password --gecos "" logcabin
   (
     cd logcabin
