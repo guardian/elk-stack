@@ -66,5 +66,5 @@ cp /tmp/config/elasticsearch.yml /etc/elasticsearch/elasticsearch.yml.template
 cp /tmp/config/config.js /opt/logcabin/config.js.template
 
 ## Install upstart configuration
-cp /tmp/config/elasticsearch.conf /etc/init/elasticsearch.conf
-cp /tmp/config/logcabin.conf /etc/init/logcabin.conf
+cp /tmp/config/upstart-elasticsearch.conf /etc/init/elasticsearch.conf
+cp /tmp/config/upstart-logcabin.conf /etc/init/logcabin.conf
