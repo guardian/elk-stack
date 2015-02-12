@@ -28,6 +28,11 @@
 
   "provisioners" : [
     {
+      "type": "file",
+      "source": "../config",
+      "destination": "/tmp"
+    },
+    {
       "type": "shell",
       "script": "elk-provisioning.sh",
       "execute_command": "{{ .Vars }} sudo -E bash -x '{{ .Path }}'"

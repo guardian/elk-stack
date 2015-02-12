@@ -22,7 +22,7 @@ apt-get --yes --force-yes install language-pack-en build-essential openjdk-7-jre
 /usr/share/elasticsearch/bin/plugin --install royrusso/elasticsearch-HQ
 
 ## Install logstash config
-wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf
+cp /tmp/config/logstash-indexer.conf /etc/logstash/conf.d/logstash-indexer.conf
 sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf
 
 ## Mount the ephemeral storage on /data
@@ -61,10 +61,10 @@ echo "vm.overcommit_memory=1" > /etc/sysctl.d/70-vm-overcommit
   mv kibana-latest kibana
 )
 
-## Download template config files (need to be configured in cloud-init)
-wget -O /etc/elasticsearch/elasticsearch.yml.template https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml
-wget -O /opt/logcabin/config.js.template https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js
+## Install the template config files (need to be configured in cloud-init at instance boot)
+cp /tmp/config/elasticsearch.yml /etc/elasticsearch/elasticsearch.yml.template
+cp /tmp/config/config.js /opt/logcabin/config.js.template
 
 ## Install upstart configuration
-wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf
-wget -O /etc/init/logcabin.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-logcabin.conf
+cp /tmp/config/elasticsearch.conf /etc/init/elasticsearch.conf
+cp /tmp/config/logcabin.conf /etc/init/logcabin.conf
