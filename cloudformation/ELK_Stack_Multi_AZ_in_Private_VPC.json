@@ -74,8 +74,9 @@
             "Type": "CommaDelimitedList"
         },
         "HostedZoneName": {
-            "Description": "Route53 Hosted Zone in which kibana aliases will be created. Leave blank for no ALIAS.",
-            "Type": "String"
+            "Description": "Route53 Hosted Zone in which kibana aliases will be created (without the trailing dot). Leave blank for no ALIAS.",
+            "Type": "String",
+            "AllowedPattern": "^(.*[^.]|)$"
         }
     },
 
@@ -243,7 +244,11 @@
 
                             "wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js",
                             { "Fn::Join": [ "", [ "sed -i",
-                                " -e 's,@@LOGCABIN_HOST,", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, ",g'",
+                                " -e 's,@@LOGCABIN_HOST,",
+                                    { "Fn::If" : [ "HasDNS",
+                                        { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
+                                        { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ] }
+                                    ]}, ",g'",
                                 " -e 's,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g'",
                                 " -e 's,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g'",
                                 " -e 's,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g'",
@@ -393,11 +398,11 @@
             "Type" : "AWS::Route53::RecordSetGroup",
             "Condition": "HasDNS",
             "Properties" : {
-                "HostedZoneName" : { "Ref": "HostedZoneName" },
+                "HostedZoneName" : { "Fn::Join": ["", [{ "Ref" : "HostedZoneName" }, "."]] },
                 "Comment" : "Alias to kibana elb",
                 "RecordSets" : [
                     {
-                        "Name" : { "Fn::Join": ["", [ "kibana.", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -405,7 +410,7 @@
                         }
                     },
                     {
-                        "Name" : { "Fn::Join": ["", [ "logstash.", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "logstash", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -423,11 +428,19 @@
             "Description": "Logging endpoint for Logstash TCP input"
         },
         "KibanaURL": {
-            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, "/#/dashboard/file/logstash.json"]] },
+            "Value": { "Fn::Join": ["", ["http://",
+                { "Fn::If" : [ "HasDNS",
+                    { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
+                    { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
+                ]}, "/#/dashboard/file/logstash.json"]] },
             "Description": "URL for the Kibana Dashboard"
         },
         "GoogleOAuthRedirectUrl": {
-            "Value": { "Fn::Join": ["", ["http://", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, "/auth/google/callback"]] },
+            "Value": { "Fn::Join": ["", ["http://",
+                { "Fn::If" : [ "HasDNS",
+                    { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
+                    { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
+                ]}, "/auth/google/callback"]] },
             "Description": "Redirect URL for the Google Developers Console"
         }
     }
