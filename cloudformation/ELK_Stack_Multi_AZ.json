@@ -50,9 +50,31 @@
             "Description": "Google OAuth 2.0 Client Secret",
             "Type": "String"
         },
+        "AllowedDomain": {
+            "Description": "Google apps domain eg. gmail.com or example.com",
+            "Type": "String",
+            "Default": "guardian.co.uk"
+        },
         "HostedZoneName": {
-            "Description": "Route53 Hosted Zone in which kibana aliases will be created",
+            "Description": "Route53 Hosted Zone in which kibana aliases will be created. Leave blank for no ALIAS.",
             "Type": "String"
+        }
+    },
+
+    "Conditions": {
+        "HasDNS": { "Fn::Not" : [{"Fn::Equals" : [{"Ref" : "HostedZoneName"}, "" ] } ] }
+    },
+
+    "Mappings" : {
+        "RegionMap" : {
+            "us-east-1" :      { "ImageId": "ami-408c7f28" },
+            "us-west-2" :      { "ImageId": "ami-f34032c3" },
+            "us-west-1" :      { "ImageId": "ami-a26265e7" },
+            "eu-west-1" :      { "ImageId": "ami-cb4986bc" },
+            "ap-southeast-1" : { "ImageId": "ami-506d3102" },
+            "ap-southeast-2" : { "ImageId": "ami-7bb8dd41" },
+            "ap-northeast-1" : { "ImageId": "ami-19dd9218" },
+            "sa-east-1" :      { "ImageId": "ami-8f0aa692" }
         }
     },
 
@@ -124,7 +146,7 @@
         "ElkLaunchConfig": {
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
-                "ImageId": "ami-cb4986bc",
+                "ImageId": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "ImageId" ]},
                 "SecurityGroups": [ { "Ref": "ElkSecurityGroup" } ],
                 "InstanceType": { "Ref": "ElkInstanceType" },
                 "IamInstanceProfile": { "Ref": "InstanceProfile" },
@@ -180,6 +202,7 @@
                                 " -e 's,@@LOGCABIN_HOST,", { "Fn::GetAtt": [ "ElkLoadBalancer", "DNSName" ]}, ",g'",
                                 " -e 's,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g'",
                                 " -e 's,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g'",
+                                " -e 's,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g'",
                                 " /opt/logcabin/config.js" ] ] },
                             "wget -O /etc/init/logcabin.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-logcabin.conf",
 
@@ -219,7 +242,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": "22",
                         "ToPort": "22",
-                        "CidrIp": "77.91.248.0/21"
+                        "CidrIp": "0.0.0.0/0"
                     }
                 ]
             }
@@ -266,6 +289,7 @@
         },
         "KibanaAlias": {
             "Type" : "AWS::Route53::RecordSetGroup",
+            "Condition": "HasDNS",
             "Properties" : {
                 "HostedZoneName" : { "Ref": "HostedZoneName" },
                 "Comment" : "Alias to kibana elb",
