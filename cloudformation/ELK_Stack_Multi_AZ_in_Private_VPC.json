@@ -18,8 +18,8 @@
             "Description": "Stage applied as a tag",
             "Type": "String",
             "Default": "PROD",
-            "AllowedValues": [ "PROD", "CODE" ],
-            "ConstraintDescription": "must be a valid stage eg. PROD, CODE"
+            "AllowedValues": [ "PROD", "CODE", "INFRA" ],
+            "ConstraintDescription": "must be a valid stage eg. PROD, CODE, INFRA"
         },
         "ElkCapacity": {
             "Description": "Autoscale Size",
