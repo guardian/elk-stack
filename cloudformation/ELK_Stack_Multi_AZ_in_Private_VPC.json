@@ -47,6 +47,11 @@
             ],
             "ConstraintDescription": "must be a valid EC2 instance type"
         },
+        "CookieSecret": {
+            "Description": "Secret used to sign the session ID cookie ie. any random string",
+            "Type": "String",
+            "NoEcho": true
+        },
         "GoogleOAuthClientId": {
             "Description": "Google OAuth 2.0 Client ID",
             "Type": "String"
@@ -244,7 +249,7 @@
                             "wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js",
                             { "Fn::Join": [ "", [ "sed -i",
                                 " -e s,@@LOGCABIN_HOST,", { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}, ",g",
-                                " -e s,@@COOKIE_SECRET,$(< /dev/urandom tr -dc A-Za-z0-9_\\!\\@\\#\\$\\%\\^\\&\\*\\(\\)-+= | head -c 32),g",
+                                " -e s,@@COOKIE_SECRET,", { "Ref": "CookieSecret" }, ",g",
                                 " -e s,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g",
                                 " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g",
                                 " -e s,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g",
