@@ -31,19 +31,12 @@
         "ElkInstanceType": {
             "Description": "EC2 instance type",
             "Type": "String",
-            "Default": "m1.large",
+            "Default": "m3.large",
             "AllowedValues": [
-                "t1.micro",
-                "m1.small",
-                "m1.medium",
-                "m1.large",
-                "m2.xlarge",
                 "m3.medium",
                 "m3.large",
                 "m3.xlarge",
-                "m3.2xlarge",
-                "c1.medium",
-                "c3.large"
+                "m3.2xlarge"
             ],
             "ConstraintDescription": "must be a valid EC2 instance type"
         },
@@ -98,6 +91,12 @@
             "ap-southeast-2" : { "ImageId": "ami-7bb8dd41" },
             "ap-northeast-1" : { "ImageId": "ami-19dd9218" },
             "sa-east-1" :      { "ImageId": "ami-8f0aa692" }
+        },
+        "InstanceMap": {
+            "m3.medium": { "ESHeapSize": "2g" },
+            "m3.large": { "ESHeapSize": "4g" },
+            "m3.xlarge": { "ESHeapSize": "8g" },
+            "m3.2xlarge": { "ESHeapSize": "15g" }
         }
     },
 
@@ -230,6 +229,10 @@
                                 " /etc/elasticsearch/elasticsearch.yml" ] ] },
 
                             "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
+
+                            { "Fn::Join": [ "", [ "sed -i",
+                                                  " -e s,@@ES_HEAP_SIZE,", { "Fn::FindInMap" : [ "InstanceMap", { "Ref" : "ElkInstanceType" }, "ESHeapSize" ]}, ",g",
+                                                  " /etc/init/elasticsearch.conf" ] ] },
 
                             "umount /mnt",
                             "mkdir /data",
