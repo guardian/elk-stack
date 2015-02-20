@@ -75,11 +75,19 @@
             "Description": "Route53 Hosted Zone in which kibana aliases will be created (without the trailing dot). Leave blank for no ALIAS.",
             "Type": "String",
             "AllowedPattern": "^(.*[^.]|)$"
+        },
+        "EBSVolumeSize": {
+            "Description": "EBS storage to be attached to each instance (in GB). Set to zero for no attached EBS volume (the on-instance storage will be used instead).",
+            "Type": "Number",
+            "Default": 0,
+            "MaxValue": 1000,
+            "MinValue": 0
         }
     },
 
     "Conditions": {
-        "HasDNS": { "Fn::Not" : [{"Fn::Equals" : [{"Ref" : "HostedZoneName"}, "" ] } ] }
+        "HasDNS": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "HostedZoneName" }, "" ] } ] },
+        "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]}
     },
 
     "Mappings" : {
@@ -163,7 +171,7 @@
                 "MinSize": "1",
                 "MaxSize": "12",
                 "DesiredCapacity": { "Ref": "ElkCapacity" },
-                "HealthCheckType": "ELB",
+                "HealthCheckType": "EC2",
                 "HealthCheckGracePeriod": 300,
                 "LoadBalancerNames": [ { "Ref": "ElkPublicLoadBalancer" }, { "Ref": "ElkInternalLoadBalancer" } ],
                 "Tags": [
@@ -197,8 +205,21 @@
                 "ImageId": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "ImageId" ]},
                 "SecurityGroups": [ { "Ref": "ElkSecurityGroup" }, { "Ref": "ElkPublicLoadBalancerSecurityGroup" }, { "Ref": "ElkInternalLoadBalancerSecurityGroup" } ],
                 "InstanceType": { "Ref": "ElkInstanceType" },
+                "BlockDeviceMappings": [ {
+                    "Fn::If": [
+                        "UseEBS",
+                        {
+                            "DeviceName" : "/dev/sdk",
+                            "Ebs" : {
+                                "VolumeSize" : { "Ref": "EBSVolumeSize"},
+                                "VolumeType": "gp2"
+                            }
+                        },
+                        { "Ref" : "AWS::NoValue" }
+                    ]
+                } ],
                 "IamInstanceProfile": { "Ref": "InstanceProfile" },
-                "AssociatePublicIpAddress": "True",
+                "AssociatePublicIpAddress": "false",
                 "KeyName": { "Ref": "KeyName" },
                 "UserData": {
                     "Fn::Base64": {
@@ -235,9 +256,20 @@
                                                   " -e s,@@ES_HEAP_SIZE,", { "Fn::FindInMap" : [ "InstanceMap", { "Ref" : "ElkInstanceType" }, "ESHeapSize" ]}, ",g",
                                                   " /etc/init/elasticsearch.conf" ] ] },
 
-                            "umount /mnt",
-                            "mkdir /data",
-                            "mount /dev/xvdb /data",
+                            { "Fn::If": [
+                                "UseEBS",
+                                { "Fn::Join": [ "\n", [
+                                    "mkfs.ext4 /dev/xvdk",
+                                    "mkdir /data",
+                                    "mount /dev/xvdk /data",
+                                    "echo '/dev/xvdk /data ext4 defaults 0 2' > /etc/fstab"
+                                ]]},
+                                { "Fn::Join": [ "\n", [
+                                    "mkdir /data",
+                                    "mount /dev/xvdb /data"
+                                ]]}
+                            ]},
+
                             "chown elasticsearch /data",
 
                             "sysctl vm.overcommit_memory=1",
