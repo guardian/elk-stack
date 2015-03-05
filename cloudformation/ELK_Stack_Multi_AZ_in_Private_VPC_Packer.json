@@ -195,7 +195,7 @@
                 "SecurityGroups": [ { "Ref": "ElkSecurityGroup" }, { "Ref": "ElkPublicLoadBalancerSecurityGroup" }, { "Ref": "ElkInternalLoadBalancerSecurityGroup" } ],
                 "InstanceType": { "Ref": "ElkInstanceType" },
                 "IamInstanceProfile": { "Ref": "InstanceProfile" },
-                "AssociatePublicIpAddress": "True",
+                "AssociatePublicIpAddress": "False",
                 "KeyName": { "Ref": "KeyName" },
                 "UserData": {
                     "Fn::Base64": {
