@@ -1,18 +1,16 @@
 #!/bin/bash -x
 set -e
 ## Add repositories we are going to use
-add-apt-repository "deb http://us.archive.ubuntu.com/ubuntu/ trusty universe multiverse"
-add-apt-repository "deb http://us.archive.ubuntu.com/ubuntu/ trusty-updates universe multiverse"
-add-apt-repository "deb http://us.archive.ubuntu.com/ubuntu/ trusty main restricted"
 add-apt-repository "deb http://packages.elasticsearch.org/logstash/1.4/debian stable main"
 add-apt-repository "deb http://packages.elasticsearch.org/elasticsearch/1.3/debian stable main"
 add-apt-repository -y ppa:chris-lea/node.js
 wget -O - https://packages.elasticsearch.org/GPG-KEY-elasticsearch | apt-key add -
+sleep 1
 
 ## Update index and install packages
 apt-get update
-apt-get --yes --force-yes install git wget ruby ruby-dev make ec2-api-tools ec2-ami-tools
-apt-get --yes --force-yes install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs
+apt-get --yes --force-yes install ruby ruby-dev
+apt-get --yes --force-yes install logstash elasticsearch nodejs
 
 ## Install Elasticsearch plugins
 /usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.1.1
