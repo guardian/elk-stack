@@ -61,6 +61,10 @@ echo "vm.overcommit_memory=1" > /etc/sysctl.d/70-vm-overcommit
 cp /tmp/config/elasticsearch.yml /etc/elasticsearch/elasticsearch.yml.template
 cp /tmp/config/config.js /opt/logcabin/config.js.template
 
+## Remove existing init.d config for elasticsearch
+rm /etc/init.d/elasticsearch
+update-rc.d elasticsearch remove
+
 ## Install upstart configuration
 cp /tmp/config/upstart-elasticsearch.conf /etc/init/elasticsearch.conf
 cp /tmp/config/upstart-logcabin.conf /etc/init/logcabin.conf
