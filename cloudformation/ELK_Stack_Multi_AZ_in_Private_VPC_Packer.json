@@ -28,11 +28,6 @@
             "MinValue": 1,
             "MaxValue": 12
         },
-        "ElkMinNodes": {
-            "Description": "The minimum number of nodes that can form a cluster (should be n/2 + 1, e.g. for 3 nodes this should be 2)",
-            "Type": "Number",
-            "Default": "1"
-        },
         "ElkInstanceType": {
             "Description": "EC2 instance type",
             "Type": "String",
@@ -201,13 +196,15 @@
                     "Fn::Base64": {
                         "Fn::Join": [ "\n", [
                             "#!/bin/bash -v",
+                            "set -e",
                             "chown elasticsearch /data",
+                            "MINIMUM_NODES=$(expr ",{ "Ref": "ElkCapacity" }," / 2 + 1)"
 
                             { "Fn::Join": [ "", [ "sed",
                                 " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
                                 " -e 's,@@STACK,", { "Ref": "Stack" }, ",g'",
                                 " -e 's,@@APP,kibana,g'",
-                                " -e 's,@@MINIMUM_NODES,", { "Ref": "ElkMinNodes" }, ",g'",
+                                " -e 's,@@MINIMUM_NODES,${MINIMUM_NODES},g'",
                                 " /etc/elasticsearch/elasticsearch.yml.template > /etc/elasticsearch/elasticsearch.yml" ] ] },
 
                             { "Fn::Join": [ "", [ "sed",
