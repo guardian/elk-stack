@@ -22,6 +22,7 @@ exports.setupOAuth = function(express, app, config) {
             clientID: config.oauth_client_id,
             clientSecret: config.oauth_client_secret,
             callbackURL: callbackUrl
+            hostedDomain: config.allowed_domain
         }, function(accessToken, refreshToken, profile, done) {
             findUser(profile, accessToken, config, function(succeed, msg) {
                 return succeed ? done(null, profile): done(null, false, { message: msg})
@@ -68,11 +69,5 @@ function nonAuthenticated(config, url) {
 
 function findUser(profile, accessToken, config, callback)  {
     var username = profile.displayName || 'unknown'
-
-    if (profile._json.email.split('@')[1] === config.allowed_domain) {
-        return callback(true, username)
-    } else {
-        console.log('access refused to: ' + username)
-        return callback(false, username + ' is not authorized')
-    }
+    return callback(true, username)
 }
