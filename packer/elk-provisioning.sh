@@ -13,7 +13,7 @@ apt-get --yes --force-yes install ruby ruby-dev
 apt-get --yes --force-yes install logstash elasticsearch nodejs
 
 ## Install Elasticsearch plugins
-/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.1.1
+/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.3.0
 /usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head
 /usr/share/elasticsearch/bin/plugin --install lukas-vlcek/bigdesk
 /usr/share/elasticsearch/bin/plugin --install karmi/elasticsearch-paramedic
