@@ -4,7 +4,7 @@
       "build_name": null,
       "account_numbers": "",
       "build_branch": "DEV",
-      "source_ami": "ami-3f38a848"
+      "source_ami": "ami-0345d674"
   },
   "builders": [
     {

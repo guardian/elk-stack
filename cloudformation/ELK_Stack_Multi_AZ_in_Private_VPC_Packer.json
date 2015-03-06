@@ -198,13 +198,13 @@
                             "#!/bin/bash -v",
                             "set -e",
                             "chown elasticsearch /data",
-                            "MINIMUM_NODES=$(expr ",{ "Ref": "ElkCapacity" }," / 2 + 1)"
+                            { "Fn::Join": [ "", [ "MINIMUM_NODES=$(expr ", { "Ref": "ElkCapacity" }, " / 2 + 1)" ] ] },
 
                             { "Fn::Join": [ "", [ "sed",
                                 " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
                                 " -e 's,@@STACK,", { "Ref": "Stack" }, ",g'",
                                 " -e 's,@@APP,kibana,g'",
-                                " -e 's,@@MINIMUM_NODES,${MINIMUM_NODES},g'",
+                                " -e \"s,@@MINIMUM_NODES,${MINIMUM_NODES},g\"",
                                 " /etc/elasticsearch/elasticsearch.yml.template > /etc/elasticsearch/elasticsearch.yml" ] ] },
 
                             { "Fn::Join": [ "", [ "sed",
