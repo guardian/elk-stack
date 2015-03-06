@@ -349,12 +349,13 @@
                                         "\"bucket\": \"", { "Ref" : "ElkS3Bucket" }, "\",",
                                         "\"region\": \"", { "Ref" : "AWS::Region" }, "\"",
                                      "}",
-                                "}'"
+                                "}' && echo"
                                 ]
                             ]},
 
-                            "# add regular snapshot backup and delete of old indexes"
-
+                            "wget -O /usr/local/bin/backup/backup.sh https://raw.githubusercontent.com/guardian/elk-stack/master/scripts/backup.sh",
+                            "chmod +x /usr/local/bin/backup.sh",
+                            "echo '45 23 * * * /usr/local/bin/backup/backup.sh' | crontab -u logcabin -"
                         ] ]
                     }
                 }
