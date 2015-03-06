@@ -9,8 +9,8 @@ sleep 1
 
 ## Update index and install packages
 apt-get update
-apt-get --yes --force-yes install ruby ruby-dev
-apt-get --yes --force-yes install logstash elasticsearch nodejs
+apt-get --yes --force-yes install ruby ruby-dev logstash elasticsearch \
+    nodejs python-pip
 
 ## Install Elasticsearch plugins
 /usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.3.0
@@ -22,6 +22,15 @@ apt-get --yes --force-yes install logstash elasticsearch nodejs
 ## Install logstash config
 cp /tmp/config/logstash-indexer.conf /etc/logstash/conf.d/logstash-indexer.conf
 sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf
+
+## Install the curator
+pip install elasticsearch-curator
+# Add script and install crontab
+mkdir -p /opt/bin
+cp /tmp/config/housekeeping.sh /opt/bin
+crontab -u elasticsearch - << EOM
+0 1 * * * /bin/bash /opt/bin/housekeeping.sh
+EOM
 
 ## Mount the ephemeral storage on /data
 # Create /data
