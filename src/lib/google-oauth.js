@@ -21,7 +21,7 @@ exports.setupOAuth = function(express, app, config) {
     passport.use(new GoogleStrategy({
             clientID: config.oauth_client_id,
             clientSecret: config.oauth_client_secret,
-            callbackURL: callbackUrl
+            callbackURL: callbackUrl,
             hostedDomain: config.allowed_domain
         }, function(accessToken, refreshToken, profile, done) {
             findUser(profile, accessToken, config, function(succeed, msg) {
