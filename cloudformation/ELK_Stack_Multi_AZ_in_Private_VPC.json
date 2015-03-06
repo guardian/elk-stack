@@ -82,6 +82,10 @@
             "Default": 0,
             "MaxValue": 1000,
             "MinValue": 0
+        },
+        "ElkSnapshotRepository": {
+            "Description": "S3 bucket name for elasticsearch snapshots repository",
+            "Type": "String"
         }
     },
 
@@ -114,6 +118,7 @@
         "ElkS3Bucket" : {
             "Type" : "AWS::S3::Bucket",
             "Properties" : {
+                "BucketName" : { "Ref": "ElkSnapshotRepository" },
                 "AccessControl" : "Private"
             }
         },
