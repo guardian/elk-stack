@@ -84,11 +84,17 @@
           "Description": "ARN of the SSL certificate for *.gutools.co.uk",
           "Type": "String",
           "Default": "arn:aws:iam::743583969668:server-certificate/sites.gutools.co.uk-exp2015-10-20"
+        },
+        "SnapshotBucket": {
+            "Description": "The name of the S3 bucket to configure for creating and restoring snapshots",
+            "Type": "String",
+            "Default": ""
         }
     },
 
     "Conditions": {
-        "HostnameSpecified": {"Fn::Not": [{"Fn::Equals": [{"Ref": "Hostname"}, ""]}]}
+        "HostnameSpecified": {"Fn::Not": [{"Fn::Equals": [{"Ref": "Hostname"}, ""]}]},
+        "SnapshotBucketSpecified": {"Fn::Not": [{"Fn::Equals": [{"Ref": "SnapshotBucket"}, ""]}]}
     },
 
     "Resources": {
@@ -328,22 +334,61 @@
                             }
                         }
                     ]
+                }
+            }
+        },
+        "DescribeInstancesPolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName":"ec2-describe-instances",
+                "PolicyDocument": {
+                    "Version" : "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": "ec2:DescribeInstances",
+                            "Effect": "Allow",
+                            "Resource": "*"
+                        }
+                    ]
                 },
-                "Policies": [
-                    {
-                        "PolicyName":"ec2-describe-instances",
-                        "PolicyDocument": {
-                            "Version" : "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Action": "ec2:DescribeInstances",
-                                    "Effect": "Allow",
-                                    "Resource": "*"
-                                }
+                "Roles": [{"Ref": "Role"}]
+            }
+        },
+        "SnapshotBucketPolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Condition" : "SnapshotBucketSpecified",
+            "Properties": {
+                "PolicyName":"SnapshotBucketPolicy",
+                "PolicyDocument": {
+                    "Version" : "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": [
+                                "s3:ListBucket"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                              { "Fn::Join": [ "",
+                                [ "arn:aws:s3:::", { "Ref" : "SnapshotBucket"} ]
+                              ] }
+                            ]
+                        },
+                        {
+                            "Action": [
+                                "s3:GetObject",
+                                "s3:PutObject",
+                                "s3:DeleteObject"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": [
+                              { "Fn::Join": [ "",
+                                [ "arn:aws:s3:::", { "Ref" : "SnapshotBucket"}, "/*" ]
+                              ] }
                             ]
                         }
-                    }
-                ]
+                    ]
+                },
+                "Roles": [{"Ref": "Role"}]
             }
         },
         "InstanceProfile": {
