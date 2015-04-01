@@ -275,7 +275,7 @@
 
                             "add-apt-repository -y ppa:chris-lea/node.js",
                             "apt-get -y update",
-                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs",
+                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs ntp",
 
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
                             "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
