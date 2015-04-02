@@ -127,6 +127,9 @@
             "Type": "AWS::IAM::Policy",
             "Properties": {
                 "PolicyName": "ElkS3Policy",
+                "Groups": [],
+                "Roles": [ { "Ref": "Role" } ],
+                "Users": [],
                 "PolicyDocument": {
                     "Statement": [
                         {
