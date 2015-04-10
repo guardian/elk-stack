@@ -86,6 +86,11 @@
         "ElkSnapshotRepository": {
             "Description": "S3 bucket name for elasticsearch snapshots repository",
             "Type": "String"
+        },
+        "ElkIndexKeepDays": {
+            "Description": "Keep indices for x number of days",
+            "Type": "Number",
+            "Default": "8"
         }
     },
 
@@ -278,7 +283,7 @@
 
                             "add-apt-repository -y ppa:chris-lea/node.js",
                             "apt-get -y update",
-                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs ntp",
+                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs ntp python-pip",
 
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
                             "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
@@ -365,7 +370,15 @@
 
                             "wget -O /usr/local/bin/backup.sh https://raw.githubusercontent.com/guardian/elk-stack/master/scripts/backup.sh",
                             "chmod +x /usr/local/bin/backup.sh",
-                            "echo '15 0 * * * /usr/local/bin/backup.sh' | crontab -u logcabin -"
+                            "echo '15 0 * * * root /usr/local/bin/backup.sh' >/etc/cron.d/backup",
+
+                            "pip install elasticsearch-curator",
+                            { "Fn::Join": [ "", [
+                                "echo '30 0 * * * root /usr/local/bin/curator --logfile /var/log/elasticsearch/curator.log delete indices --older-than ",
+                                { "Ref" : "ElkIndexKeepDays" },
+                                " --time-unit days --timestring \"\\%Y.\\%m.\\%d\"' >/etc/cron.d/curator"
+                                ]
+                            ]}
                         ] ]
                     }
                 }
