@@ -86,12 +86,29 @@
         "ElkSnapshotRepository": {
             "Description": "S3 bucket name for elasticsearch snapshots repository",
             "Type": "String"
+        },
+        "ElkIndexKeepDays": {
+            "Description": "Keep indices for x number of days",
+            "Type": "Number",
+            "Default": "8"
+        },
+        "KibanaVersion": {
+            "Description": "KibanaVersion",
+            "Type": "String",
+            "Default": "kibana-latest",
+            "AllowedValues": [
+                "kibana-latest",
+                "kibana-4.0.2-linux-x64",
+                "kibana-4.0.2-linux-x86"
+            ],
+            "ConstraintDescription": "must be a valid kibana version"
         }
     },
 
     "Conditions": {
         "HasDNS": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "HostedZoneName" }, "" ] } ] },
-        "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]}
+        "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]},
+        "Kibana3": { "Fn::Equals" : [ { "Ref" : "KibanaVersion" }, "kibana-latest" ] }
     },
 
     "Mappings" : {
@@ -271,19 +288,38 @@
                     "Fn::Base64": {
                         "Fn::Join": [ "\n", [
                             "#!/bin/bash -v",
-
+                            "echo \"127.0.0.1 `hostname`\" >> /etc/hosts",
                             "wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | apt-key add -",
-                            "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
-                            "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.3/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list",
+
+                            { "Fn::If": [
+                                "Kibana3",
+                                { "Fn::Join": [ "\n", [
+                                    "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
+                                    "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.3/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list"
+                                ]]},
+                                { "Fn::Join": [ "\n", [
+                                    "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
+                                    "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list"
+                                ]]}
+                            ]},
 
                             "add-apt-repository -y ppa:chris-lea/node.js",
                             "apt-get -y update",
-                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs ntp",
+                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs ntp python-pip",
 
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
                             "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
 
-                            "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.1.1",
+                            { "Fn::If": [
+                                "Kibana3",
+                                { "Fn::Join": [ "\n", [
+                                    "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.1.1"
+                                ]]},
+                                { "Fn::Join": [ "\n", [
+                                    "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.4.1"
+                                ]]}
+                            ]},
+
                             "/usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head",
                             "/usr/share/elasticsearch/bin/plugin --install lukas-vlcek/bigdesk",
                             "/usr/share/elasticsearch/bin/plugin --install karmi/elasticsearch-paramedic",
@@ -342,9 +378,21 @@
                                 " /opt/logcabin/config.js" ] ] },
                             "wget -O /etc/init/logcabin.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-logcabin.conf",
 
-                            "wget http://download.elasticsearch.org/kibana/kibana/kibana-latest.tar.gz",
-                            "tar zxvf kibana-latest.tar.gz",
-                            "mv kibana-latest kibana",
+                            { "Fn::Join": [ "", [
+                                "wget -O kibana.tar.gz https://download.elastic.co/kibana/kibana/",{ "Ref": "KibanaVersion" },".tar.gz;",
+                                "tar zxvf kibana.tar.gz"
+                            ]]},
+
+                            "# Kibana version specific",
+                            { "Fn::If": [
+                                "Kibana3",
+                                { "Fn::Join": [ "\n", [
+                                    "# is kibana 3"
+                                ]]},
+                                { "Fn::Join": [ "\n", [
+                                    "# is kibana 4"
+                                ]]}
+                            ]},
 
                             "start logstash",
                             "start elasticsearch",
@@ -365,7 +413,15 @@
 
                             "wget -O /usr/local/bin/backup.sh https://raw.githubusercontent.com/guardian/elk-stack/master/scripts/backup.sh",
                             "chmod +x /usr/local/bin/backup.sh",
-                            "echo '15 0 * * * /usr/local/bin/backup.sh' | crontab -u logcabin -"
+                            "echo '15 0 * * * root /usr/local/bin/backup.sh' >/etc/cron.d/backup",
+
+                            "pip install elasticsearch-curator",
+                            { "Fn::Join": [ "", [
+                                "echo '30 0 * * * root /usr/local/bin/curator --logfile /var/log/elasticsearch/curator.log delete indices --older-than ",
+                                { "Ref" : "ElkIndexKeepDays" },
+                                " --time-unit days --timestring \"\\%Y.\\%m.\\%d\"' >/etc/cron.d/curator"
+                                ]
+                            ]}
                         ] ]
                     }
                 }
@@ -506,7 +562,7 @@
                 "Comment" : "Alias to kibana elb",
                 "RecordSets" : [
                     {
-                        "Name" : { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "kibana4-4", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -514,7 +570,7 @@
                         }
                     },
                     {
-                        "Name" : { "Fn::Join": [".", [ "logstash", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "logstash2-4", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
