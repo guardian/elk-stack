@@ -360,6 +360,7 @@
                             "wget -O elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz",
                             "tar zxvf elk-stack.tar.gz",
                             "mv elk-stack-master/src logcabin",
+                            "adduser --disabled-password --gecos \"\" kibana",
                             "adduser --disabled-password --gecos \"\" logcabin",
                             "cd logcabin && npm install && cd ..",
                             "chown -R logcabin logcabin",
@@ -380,7 +381,8 @@
 
                             { "Fn::Join": [ "", [
                                 "wget -O kibana.tar.gz https://download.elastic.co/kibana/kibana/",{ "Ref": "KibanaVersion" },".tar.gz;",
-                                "tar zxvf kibana.tar.gz"
+                                "tar zxvf kibana.tar.gz",
+                                "ln -svf /opt/kibana-* /opt/kibana"
                             ]]},
 
                             "# Kibana version specific",
@@ -390,7 +392,9 @@
                                     "# is kibana 3"
                                 ]]},
                                 { "Fn::Join": [ "\n", [
-                                    "# is kibana 4"
+                                    "# is kibana 4",
+                                    "wget -O /etc/init/kibana.conf https://gist.githubusercontent.com/ajohnstone/f46fc279a0e7de4edcc4/raw/a3eaba51044fabc630243df5e80abf19cedee985/upstart-kibana.conf",
+                                    "start kibana"
                                 ]]}
                             ]},
 
@@ -496,6 +500,12 @@
                     },
                     {
                         "IpProtocol": "tcp",
+                        "FromPort": "5601",
+                        "ToPort": "5601",
+                        "SourceSecurityGroupId": { "Ref": "ElkPublicLoadBalancerSecurityGroup" }
+                    },
+                    {
+                        "IpProtocol": "tcp",
                         "FromPort": "22",
                         "ToPort": "22",
                         "CidrIp": "0.0.0.0/0"
@@ -562,7 +572,7 @@
                 "Comment" : "Alias to kibana elb",
                 "RecordSets" : [
                     {
-                        "Name" : { "Fn::Join": [".", [ "kibana4-4", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -570,7 +580,7 @@
                         }
                     },
                     {
-                        "Name" : { "Fn::Join": [".", [ "logstash2-4", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "logstash", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
