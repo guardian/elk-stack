@@ -1,3 +1,4 @@
+
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
@@ -393,6 +394,11 @@
                                 ]]},
                                 { "Fn::Join": [ "\n", [
                                     "# is kibana 4",
+                                    "cd /opt/kibana/src;",
+                                    "wget -O auth.patch https://gist.githubusercontent.com/ajohnstone/3829cb02e983d6102c3e/raw/238bd2d85d93612f6da9a8f3d3b485ead5bc15c4/gistfile1.txt",
+                                    "patch < auth.patch",
+                                    "cp -v /opt/logcabin/config.js /opt/kibana/src/config/security.js",
+                                    "cp -v /opt/logcabin/lib/* /opt/kibana/src/lib/",
                                     "wget -O /etc/init/kibana.conf https://gist.githubusercontent.com/ajohnstone/f46fc279a0e7de4edcc4/raw/a3eaba51044fabc630243df5e80abf19cedee985/upstart-kibana.conf",
                                     "start kibana"
                                 ]]}
