@@ -183,7 +183,11 @@
                     {
                         "Protocol": "HTTP",
                         "LoadBalancerPort": "80",
-                        "InstancePort": "8080"
+                        "InstancePort":  {
+                            "Fn::If": [
+                                "Kibana3","8080", "5601"
+                            ]
+                        }
                     }
                 ],
                 "HealthCheck": {
@@ -382,8 +386,8 @@
 
                             { "Fn::Join": [ "", [
                                 "wget -O kibana.tar.gz https://download.elastic.co/kibana/kibana/",{ "Ref": "KibanaVersion" },".tar.gz;",
-                                "tar zxvf kibana.tar.gz",
-                                "ln -svf /opt/kibana-* /opt/kibana"
+                                "tar zxvf kibana.tar.gz;",
+                                "ln -svf /opt/kibana-* /opt/kibana;"
                             ]]},
 
                             "# Kibana version specific",
@@ -399,6 +403,7 @@
                                     "patch < auth.patch",
                                     "cp -v /opt/logcabin/config.js /opt/kibana/src/config/security.js",
                                     "cp -v /opt/logcabin/lib/* /opt/kibana/src/lib/",
+                                    "npm install passport passport-google-oauth client-sessions",
                                     "wget -O /etc/init/kibana.conf https://gist.githubusercontent.com/ajohnstone/f46fc279a0e7de4edcc4/raw/a3eaba51044fabc630243df5e80abf19cedee985/upstart-kibana.conf",
                                     "start kibana"
                                 ]]}
@@ -578,7 +583,7 @@
                 "Comment" : "Alias to kibana elb",
                 "RecordSets" : [
                     {
-                        "Name" : { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "kibana4", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -586,7 +591,7 @@
                         }
                     },
                     {
-                        "Name" : { "Fn::Join": [".", [ "logstash", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "logstash4", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
