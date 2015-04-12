@@ -589,7 +589,7 @@
                 "Comment" : "Alias to kibana elb",
                 "RecordSets" : [
                     {
-                        "Name" : { "Fn::Join": [".", [ "kibana4", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -597,7 +597,7 @@
                         }
                     },
                     {
-                        "Name" : { "Fn::Join": [".", [ "logstash4", {"Ref": "HostedZoneName"} ]] },
+                        "Name" : { "Fn::Join": [".", [ "logstash", {"Ref": "HostedZoneName"} ]] },
                         "Type" : "A",
                         "AliasTarget" : {
                            "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
