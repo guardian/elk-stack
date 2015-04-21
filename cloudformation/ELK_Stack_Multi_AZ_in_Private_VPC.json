@@ -99,8 +99,7 @@
             "Default": "kibana-latest",
             "AllowedValues": [
                 "kibana-latest",
-                "kibana-4.0.2-linux-x64",
-                "kibana-4.0.2-linux-x86"
+                "kibana-4.0.2-linux-x64"
             ],
             "ConstraintDescription": "must be a valid kibana version"
         }
@@ -128,6 +127,18 @@
             "m3.large": { "ESHeapSize": "4g" },
             "m3.xlarge": { "ESHeapSize": "8g" },
             "m3.2xlarge": { "ESHeapSize": "15g" }
+        },
+        "AppVersionMap": {
+            "kibana-latest": {
+                "LogstashAptVersion": "1.4",
+                "ElasticSearchAptVersion": "1.3",
+                "ElasticSearchPluginAWS": "2.1.1"
+            },
+            "kibana-4.0.2-linux-x64": {
+                "LogstashAptVersion": "1.4",
+                "ElasticSearchAptVersion": "1.4",
+                "ElasticSearchPluginAWS": "2.4.1"
+            }
         }
     },
 
@@ -296,17 +307,10 @@
                             "echo \"127.0.0.1 `hostname`\" >> /etc/hosts",
                             "wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | apt-key add -",
 
-                            { "Fn::If": [
-                                "Kibana3",
-                                { "Fn::Join": [ "\n", [
-                                    "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
-                                    "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.3/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list"
-                                ]]},
-                                { "Fn::Join": [ "\n", [
-                                    "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
-                                    "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.4/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list"
-                                ]]}
-                            ]},
+                            { "Fn::Join": [ "", [
+                                "echo \"deb http://packages.elasticsearch.org/logstash/", { "Fn::FindInMap" : [ "AppVersionMap", { "Ref" : "KibanaVersion" }, "LogstashAptVersion" ]}, "/debian stable main\" > /etc/apt/sources.list.d/logstash.list;\n",
+                                "echo \"deb http://packages.elasticsearch.org/elasticsearch/", { "Fn::FindInMap" : [ "AppVersionMap", { "Ref" : "KibanaVersion" }, "ElasticSearchAptVersion" ]}, "/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list;\n"
+                            ]]},
 
                             "add-apt-repository -y ppa:chris-lea/node.js",
                             "apt-get -y update",
@@ -315,15 +319,9 @@
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
                             "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
 
-                            { "Fn::If": [
-                                "Kibana3",
-                                { "Fn::Join": [ "\n", [
-                                    "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.1.1"
-                                ]]},
-                                { "Fn::Join": [ "\n", [
-                                    "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.4.1"
-                                ]]}
-                            ]},
+                            { "Fn::Join": [ "", [
+                                "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/", { "Fn::FindInMap" : [ "AppVersionMap", { "Ref" : "KibanaVersion" }, "ElasticSearchPluginAWS" ]}, ";\n"
+                            ]]},
 
                             "/usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head",
                             "/usr/share/elasticsearch/bin/plugin --install lukas-vlcek/bigdesk",
