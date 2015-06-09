@@ -1,18 +1,21 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
-
-    "Description": "ELK Stack - Elasticsearch, Logstash, Kibana",
+    "Description": "ELK Stack",
 
     "Parameters": {
-
+        "App": {
+            "Description": "App applied as a tag",
+            "Type": "String",
+            "Default": "elk"
+        },
         "Stack": {
             "Description": "Stack applied as a tag",
             "Type": "String"
         },
         "KeyName": {
-            "Default": "bootstrap",
             "Description": "Name of an existing EC2 KeyPair for SSH access",
-            "Type": "String"
+            "Type": "String",
+            "Default": "bootstrap"
         },
         "Stage": {
             "Description": "Stage applied as a tag",
@@ -89,6 +92,10 @@
             "Description": "The name of the S3 bucket to configure for creating and restoring snapshots",
             "Type": "String",
             "Default": ""
+        },
+        "CustomerMasterKey": {
+            "Description": "The KMS CMK to use to encrypt the EBS volume",
+            "Type": "String"
         }
     },
 
@@ -110,6 +117,7 @@
     },
 
     "Resources": {
+
         "ExtLB": {
             "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties": {
@@ -187,12 +195,12 @@
                     },
                     {
                         "Key": "App",
-                        "Value": "elk",
+                        "Value": { "Ref": "App" },
                         "PropagateAtLaunch": "true"
                     },
                     {
                         "Key": "Name",
-                        "Value": { "Fn::Join": [ "", [ "ELK-", { "Ref": "Stage" } ] ] },
+                        "Value": { "Fn::Join": [ "", [ { "Ref": "App" }, "-", { "Ref": "Stage" } ] ] },
                         "PropagateAtLaunch": "true"
                     }
                 ]
@@ -208,28 +216,21 @@
                 "IamInstanceProfile": { "Ref": "InstanceProfile" },
                 "AssociatePublicIpAddress": "False",
                 "KeyName": { "Ref": "KeyName" },
-                "BlockDeviceMappings" : [
-                    {
-                        "DeviceName" : "/dev/sdf",
-                        "Ebs" : { "VolumeSize" : "100" }
-                    }
-                ],
                 "UserData": {
                     "Fn::Base64": {
                         "Fn::Join": [ "\n", [
                             "#!/bin/bash -ev",
-                            "mkfs -t ext4 /dev/xvdf",
+                            { "Fn::Join": [ "", ["/opt/features/ebs/add-encrypted.sh -s 100 -d f -m /data -x -k ", { "Ref": "CustomerMasterKey" }] ] },
                             "[ -d /data ] || mkdir /data",
                             "echo '/dev/xvdf    /data    ext4    defaults,nofail    0 2' >> /etc/fstab",
-                            "mount /data",
                             "chown elasticsearch /data",
                             { "Fn::Join": [ "", [ "MINIMUM_NODES=$(expr ", { "Ref": "Capacity" }, " / 2 + 1)" ] ] },
 
                             { "Fn::Join": [ "", [ "sed",
-                                " -e 's,@@ES_CLUSTER_NAME,", "ELK-", { "Ref": "Stage" }, ",g'",
+                                " -e 's,@@ES_CLUSTER_NAME,", { "Ref": "App" }, "-", { "Ref": "Stage" }, ",g'",
                                 " -e 's,@@REGION,", { "Ref": "AWS::Region" }, ",g'",
                                 " -e 's,@@STACK,", { "Ref": "Stack" }, ",g'",
-                                " -e 's,@@APP,kibana,g'",
+                                " -e 's,@@APP,", { "Ref": "App" }, ",g'",
                                 " -e \"s,@@MINIMUM_NODES,${MINIMUM_NODES},g\"",
                                 " -e \"s,@@MINIMUM_NODES,${MINIMUM_NODES},g\"",
                                 " /etc/elasticsearch/elasticsearch.yml.template > /etc/elasticsearch/elasticsearch.yml" ] ] },
@@ -381,7 +382,7 @@
         "DescribeInstancesPolicy": {
             "Type": "AWS::IAM::Policy",
             "Properties": {
-                "PolicyName":"ec2-describe-instances",
+                "PolicyName":"DescribeInstances",
                 "PolicyDocument": {
                     "Version" : "2012-10-17",
                     "Statement": [
@@ -389,6 +390,39 @@
                             "Action": "ec2:DescribeInstances",
                             "Effect": "Allow",
                             "Resource": "*"
+                        }
+                    ]
+                },
+                "Roles": [{"Ref": "Role"}]
+            }
+        },
+
+        "CreateEncryptedVolumePolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "CreateEncryptedVolumePolicy",
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": [
+                                "ec2:CreateVolume",
+                                "ec2:AttachVolume",
+                                "ec2:CreateTags",
+                                "ec2:DescribeTags",
+                                "ec2:DescribeVolumes",
+                                "ec2:ModifyInstanceAttribute"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": "*"
+                        },
+                        {
+                            "Action": [
+                                "kms:CreateGrant",
+                                "kms:GenerateDataKeyWithoutPlaintext",
+                                "kms:Decrypt"
+                            ],
+                            "Effect": "Allow",
+                            "Resource": { "Ref": "CustomerMasterKey"}
                         }
                     ]
                 },
