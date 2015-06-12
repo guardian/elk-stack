@@ -36,9 +36,6 @@
             "Type": "String",
             "Default": "m3.large",
             "AllowedValues": [
-                "t2.micro",
-                "t2.small",
-                "t2.medium",
                 "m3.medium",
                 "m3.large",
                 "m3.xlarge",
@@ -106,9 +103,6 @@
 
     "Mappings" : {
         "AWSInstanceType2Memory" : {
-            "t2.micro"    : { "Memory" : "1024" },
-            "t2.small"    : { "Memory" : "2048" },
-            "t2.medium"   : { "Memory" : "4096" },
             "m3.medium"   : { "Memory" : "3840" },
             "m3.large"    : { "Memory" : "7680" },
             "m3.xlarge"   : { "Memory" : "15360" },
@@ -238,13 +232,13 @@
                             { "Fn::Join": [ "", [ "sed",
                                 " -i -e \"s,@@ES_HEAP_SIZE,$((",
                                 { "Fn::FindInMap" : [ "AWSInstanceType2Memory", { "Ref" : "InstanceType" }, "Memory" ]}
-                                , "/3))m,g\"",
+                                , "/2))m,g\"",
                                 " /etc/init/elasticsearch.conf" ] ] },
 
                             { "Fn::Join": [ "", [ "sed",
                                 " -i -e \"s,LS_HEAP_SIZE=.*,LS_HEAP_SIZE='$((",
                                 { "Fn::FindInMap" : [ "AWSInstanceType2Memory", { "Ref" : "InstanceType" }, "Memory" ]}
-                                , "/3))m',g\"",
+                                , "/4))m',g\"",
                                 " /etc/init/logstash.conf" ] ] },
 
                             { "Fn::Join": [ "", [ "sed",
