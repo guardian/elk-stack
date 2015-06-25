@@ -7,6 +7,8 @@ module.exports =  {
     'oauth_client_id': '@@CLIENT_ID',
     'oauth_client_secret': '@@CLIENT_SECRET',
     'allowed_domain': '@@ALLOWED_DOMAIN',
+    'kibana_host': 'localhost',
+    'kibana_port': 5601,
     'es_host': 'localhost',
-    'es_port': 5601
+    'es_port': 9200
 }
