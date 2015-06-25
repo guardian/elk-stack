@@ -334,7 +334,7 @@
 
                             "# Install Logstash & Elasticsearch",
 
-                            "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch nodejs ntp python-pip",
+                            "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch nodejs ntp npm python-pip",
 
                             "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.5.1",
                             "/usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head",
@@ -381,7 +381,7 @@
                             "# Install Logcabin",
 
                             "wget -O /tmp/elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz",
-                            "tar zxf /tmp/elk-stack.tar.gz",
+                            "tar zxf /tmp/elk-stack.tar.gz -C /tmp",
                             "mv /tmp/elk-stack-master/src /opt/logcabin",
                             "adduser --disabled-password --gecos \"\" logcabin",
                             "cd /opt/logcabin && npm install && cd ..",
@@ -401,11 +401,13 @@
                                 " /opt/logcabin/config.js" ] ] },
 
                             "# Start services",
+                            "wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/guardian/elk-stack/master/config/systemd-logcabin.service",
                             "wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/guardian/elk-stack/master/config/systemd-kibana.service",
 
                             "systemctl start logstash && systemctl enable logstash",
                             "systemctl start elasticsearch && systemctl enable elasticsearch",
                             "systemctl start kibana && systemctl enable kibana",
+                            "systemctl start logcabin && systemctl enable logcabin",
 
                             "# Setup S3 snapshots",
                             { "Fn::If": [

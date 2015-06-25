@@ -1,0 +1,13 @@
+[Service]
+WorkingDirectory=/opt/logcabin
+ExecStart=/usr/bin/nodejs app
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=logcabin
+User=logcabin
+Group=logcabin
+Environment=
+
+[Install]
+WantedBy=multi-user.target

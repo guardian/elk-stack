@@ -38,9 +38,9 @@ output { stdout { } tcp { host => "INSERT-ELB-DNS-NAME-HERE" port => 6379 codec 
 VPC Configuration
 -----------------
 
-This ELK stack assumes your AWS VPC is configured as per AWS guidelines which is to have a public and private subnet in each availability zone for the region. See [Your VPC and Subnets][6] for more information.
+This ELK stack assumes your AWS VPC is configured as per AWS guidelines which is to have a public and private subnet in each availability zone for the region. See [Your VPC and Subnets][6] guide for more information.
 
-The easiest way to ensure you have the required VPC setup would be to delete your existing VPC, if possible, and then use the EC2 instance launch wizard which will create a correctly configured VPC for you.
+The easiest way to ensure you have the required VPC setup would be to delete your existing VPC, if possible, and then use the [Start VPC Wizard][7] which will create a correctly configured VPC for you.
 
 Installation
 ------------
@@ -84,3 +84,4 @@ License
 [4]: <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html> "ES Scripting"
 [5]: <https://console.developers.google.com> "Google Developer Console"
 [6]: <http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html> "AWS: Your VPC and Subnets"
+[7]: <https://console.aws.amazon.com/vpc/>
