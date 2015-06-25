@@ -1,0 +1,6 @@
+name: elk
+mappings:
+  - prefix: elasticsearch
+    port: 9200
+  - prefix: logs
+    port: 9292
