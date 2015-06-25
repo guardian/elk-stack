@@ -1,6 +1,6 @@
 #!/bin/sh
 
-AMI_IMAGE_NAME="*ubuntu/images/ebs/ubuntu-trusty-14.04-amd64-server-20140607.1"
+AMI_IMAGE_NAME="ubuntu/images/hvm/ubuntu-vivid-15.04-amd64-server-20150616.1"
 
 # http://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region
 
