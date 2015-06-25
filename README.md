@@ -1,21 +1,21 @@
 ELK Stack with Google OAuth
 ===========================
 
-ELK stands for [Elasticsearch][1], [Logstash][2] and [Kibana][3] and is being promoted by Elasticsearch as a "devops" logging solution.
+ELK stands for [Elasticsearch][1], [Logstash][2] and [Kibana 4][3] and is being promoted by Elasticsearch as a "devops" logging solution.
 
 This implemenation of an ELK stack is designed to run in AWS EC2 VPC and is secured using Google OAuth 2.0. It consists of one or more instances behind an Elastic Load Balancer (ELB) running the following components:
 
-* Logstash indexer
+* Kibana 4
 * Elasticsearch
+* Logstash indexer
 * Node.js application proxy
-* Kibana3
 
 Security
 --------
 
-Only the Logstash indexer and the application proxy ports are exposed on the ELB and all requests to the application proxy for Kibana or Elasticsearch, except the ELB healthcheck (see below), are authenticated using Google OAuth.
+Only the Logstash indexer and the application proxy ports are exposed on the ELB and all requests to the application proxy for Kibana or Elasticsearch are authenticated using Google OAuth.
 
-Elasticsearch is configured to listen only on the local loopback address and has dynamic scripting disabled to address security concerns with [remote code execution][4].
+Elasticsearch is configured to listen only on the local loopback address. Dynamic scripting has been disabled to address security concerns with [remote code execution][4] since elasticsearch version 1.4.3.
 
 Healthcheck
 -----------
@@ -64,7 +64,7 @@ License
 -------
 
     Guardian ELK Stack Cloudformation Templates and Logcabin Proxy
-    Copyright 2012 Guardian News & Media
+    Copyright 2015 Guardian News & Media
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -78,9 +78,9 @@ License
     See the License for the specific language governing permissions and
     limitations under the License.
 
-[1]: <http://www.elasticsearch.org/> "Elasticsearch"
-[2]: <http://logstash.net/> "Logstash"
-[3]: <http://www.elasticsearch.org/overview/kibana/> "Kibana"
+[1]: <https://www.elastic.co/> "Elasticsearch"
+[2]: <https://www.elastic.co/products/logstash> "Logstash"
+[3]: <https://www.elastic.co/products/kibana> "Kibana"
 [4]: <http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-scripting.html> "ES Scripting"
 [5]: <https://console.developers.google.com> "Google Developer Console"
 [6]: <http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html> "AWS: Your VPC and Subnets"

@@ -393,7 +393,5 @@ cloud.aws.region: @@REGION
 action.auto_create_index: true
 action.disable_delete_all_indices: true
 
-script.disable_dynamic: true
-
 ## Add breaker settings (to prevent out of memory errors)
 indices.breaker.fielddata.limit: 40%

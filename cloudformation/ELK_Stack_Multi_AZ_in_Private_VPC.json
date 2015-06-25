@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
-    "Description": "ELK Stack - Elasticsearch, Logstash, Kibana",
+    "Description": "ELK Stack - Elasticsearch, Logstash, Kibana 4",
 
     "Parameters": {
 
@@ -12,7 +12,7 @@
         "KeyName": {
             "Default": "bootstrap",
             "Description": "Name of an existing EC2 KeyPair for SSH access",
-            "Type": "String"
+            "Type": "AWS::EC2::KeyPair::KeyName"
         },
         "Stage": {
             "Description": "Stage applied as a tag",
@@ -31,19 +31,21 @@
         "ElkInstanceType": {
             "Description": "EC2 instance type",
             "Type": "String",
-            "Default": "m3.large",
+            "Default": "m4.large",
             "AllowedValues": [
-                "m3.medium",
-                "m3.large",
-                "m3.xlarge",
-                "m3.2xlarge"
+                "t2.medium",
+                "m4.large",
+                "m4.xlarge",
+                "m4.2xlarge"
             ],
             "ConstraintDescription": "must be a valid EC2 instance type"
         },
         "CookieSecret": {
             "Description": "Secret used to sign the session ID cookie ie. any random string",
             "Type": "String",
-            "NoEcho": true
+            "NoEcho": true,
+            "AllowedPattern" : "[a-zA-Z0-9_-]*",
+            "ConstraintDescription": "must only contain upper and lower case letters, numbers, dashes and underscores"
         },
         "GoogleOAuthClientId": {
             "Description": "Google OAuth 2.0 Client ID",
@@ -61,15 +63,15 @@
         },
         "VpcId": {
             "Description": "ID of the VPC onto which to launch the application eg. vpc-1234abcd",
-            "Type": "String"
+            "Type": "AWS::EC2::VPC::Id"
         },
         "PublicVpcSubnets" : {
             "Description": "Subnets to use in VPC for public ELB eg. subnet-abcd1234",
-            "Type": "CommaDelimitedList"
+            "Type": "List<AWS::EC2::Subnet::Id>"
         },
         "PrivateVpcSubnets" : {
             "Description": "Subnets to use in VPC for instances eg. subnet-abcd1234",
-            "Type": "CommaDelimitedList"
+            "Type": "List<AWS::EC2::Subnet::Id>"
         },
         "HostedZoneName": {
             "Description": "Route53 Hosted Zone in which kibana aliases will be created (without the trailing dot). Leave blank for no ALIAS.",
@@ -83,12 +85,12 @@
             "MaxValue": 1000,
             "MinValue": 0
         },
-        "ElkSnapshotRepository": {
+        "SnapshotRepository": {
             "Description": "S3 bucket name for elasticsearch snapshots repository",
             "Type": "String"
         },
-        "ElkIndexKeepDays": {
-            "Description": "Keep indices for x number of days",
+        "IndexKeepDays": {
+            "Description": "Keep elasticsearch indices for x number of days",
             "Type": "Number",
             "Default": "8"
         }
@@ -96,25 +98,27 @@
 
     "Conditions": {
         "HasDNS": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "HostedZoneName" }, "" ] } ] },
-        "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]}
+        "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]},
+        "HasS3": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "SnapshotRepository" }, "" ] } ] }
     },
 
     "Mappings" : {
         "RegionMap" : {
-            "us-east-1" :      { "ImageId": "ami-408c7f28" },
-            "us-west-2" :      { "ImageId": "ami-f34032c3" },
-            "us-west-1" :      { "ImageId": "ami-a26265e7" },
-            "eu-west-1" :      { "ImageId": "ami-cb4986bc" },
-            "ap-southeast-1" : { "ImageId": "ami-506d3102" },
-            "ap-southeast-2" : { "ImageId": "ami-7bb8dd41" },
-            "ap-northeast-1" : { "ImageId": "ami-19dd9218" },
-            "sa-east-1" :      { "ImageId": "ami-8f0aa692" }
+            "us-east-1" :      { "ImageId": "ami-41986a2a" },
+            "us-west-2" :      { "ImageId": "ami-35d4ee05" },
+            "us-west-1" :      { "ImageId": "ami-5915e11d" },
+            "eu-west-1" :      { "ImageId": "ami-b7443fc0" },
+            "eu-central-1" :   { "ImageId": "ami-1afbc307" },
+            "ap-southeast-1" : { "ImageId": "ami-205c5872" },
+            "ap-southeast-2" : { "ImageId": "ami-990a70a3" },
+            "ap-northeast-1" : { "ImageId": "ami-ee72a8ee" },
+            "sa-east-1" :      { "ImageId": "ami-7727a46a" }
         },
         "InstanceMap": {
-            "m3.medium": { "ESHeapSize": "2g" },
-            "m3.large": { "ESHeapSize": "4g" },
-            "m3.xlarge": { "ESHeapSize": "8g" },
-            "m3.2xlarge": { "ESHeapSize": "15g" }
+            "t2.medium":  { "ESHeapSize": "2g" },
+            "m4.large":   { "ESHeapSize": "4g" },
+            "m4.xlarge":  { "ESHeapSize": "8g" },
+            "m4.2xlarge": { "ESHeapSize": "15g" }
         }
     },
 
@@ -122,20 +126,23 @@
 
         "ElkS3Bucket" : {
             "Type" : "AWS::S3::Bucket",
+            "Condition": "HasS3",
             "Properties" : {
-                "BucketName" : { "Ref": "ElkSnapshotRepository" },
+                "BucketName" : { "Ref": "SnapshotRepository" },
                 "AccessControl" : "Private"
             }
         },
 
         "ElkS3Policy": {
             "Type": "AWS::IAM::Policy",
+            "Condition": "HasS3",
             "Properties": {
                 "PolicyName": "ElkS3Policy",
                 "Groups": [],
                 "Roles": [ { "Ref": "Role" } ],
                 "Users": [],
                 "PolicyDocument": {
+                    "Version": "2012-10-17",
                     "Statement": [
                         {
                             "Action": [
@@ -143,7 +150,7 @@
                             ],
                             "Effect": "Allow",
                             "Resource": [
-                                { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref" : "ElkS3Bucket"} ]]}                            ]
+                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "ElkS3Bucket" } ] ] } ]
                         },
                         {
                             "Action": [
@@ -153,12 +160,51 @@
                             ],
                             "Effect": "Allow",
                             "Resource": [
-                                { "Fn::Join" : ["", ["arn:aws:s3:::", {"Ref" : "ElkS3Bucket"} , "/*"]]}
+                                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "ElkS3Bucket" } , "/*"] ] }
                             ]
                         }
-                    ],
-                    "Version": "2012-10-17"
+                    ]
                 }
+            }
+        },
+
+        "Role": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [ "ec2.amazonaws.com" ]
+                            }
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyName":"ec2-describe-instances",
+                        "PolicyDocument": {
+                            "Version" : "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": "ec2:DescribeInstances",
+                                    "Effect": "Allow",
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "InstanceProfile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [ { "Ref": "Role" } ]
             }
         },
 
@@ -223,7 +269,7 @@
                 "MaxSize": "12",
                 "DesiredCapacity": { "Ref": "ElkCapacity" },
                 "HealthCheckType": "EC2",
-                "HealthCheckGracePeriod": 300,
+                "HealthCheckGracePeriod": 600,
                 "LoadBalancerNames": [ { "Ref": "ElkPublicLoadBalancer" }, { "Ref": "ElkInternalLoadBalancer" } ],
                 "Tags": [
                     {
@@ -277,22 +323,22 @@
                         "Fn::Join": [ "\n", [
                             "#!/bin/bash -v",
 
-                            "wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | apt-key add -",
-                            "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
-                            "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.3/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list",
+                            "# Update repositories",
 
+                            "wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
+                            "echo \"deb http://packages.elastic.co/elasticsearch/1.6/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list",
+                            "echo \"deb http://packages.elastic.co/logstash/1.5/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
                             "add-apt-repository -y ppa:chris-lea/node.js",
+                            "sleep 1",
                             "apt-get -y update",
-                            "apt-get -y install language-pack-en build-essential openjdk-7-jre-headless logstash elasticsearch nodejs ntp python-pip",
 
-                            "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
-                            "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
+                            "# Install Logstash & Elasticsearch",
 
-                            "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.1.1",
+                            "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch nodejs ntp python-pip",
+
+                            "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.5.1",
                             "/usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head",
-                            "/usr/share/elasticsearch/bin/plugin --install lukas-vlcek/bigdesk",
                             "/usr/share/elasticsearch/bin/plugin --install karmi/elasticsearch-paramedic",
-                            "/usr/share/elasticsearch/bin/plugin --install royrusso/elasticsearch-HQ",
 
                             "wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml",
                             { "Fn::Join": [ "", [ "sed -i",
@@ -301,11 +347,12 @@
                                 " -e 's,@@APP,kibana,g'",
                                 " /etc/elasticsearch/elasticsearch.yml" ] ] },
 
-                            "wget -O /etc/init/elasticsearch.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-elasticsearch.conf",
+                            { "Fn::Join": [ "", [
+                                "echo ES_HEAP_SIZE=", { "Fn::FindInMap" : [ "InstanceMap", { "Ref" : "ElkInstanceType" }, "ESHeapSize" ]},
+                                " >> /etc/default/elasticsearch"
+                            ] ] },
 
-                            { "Fn::Join": [ "", [ "sed -i",
-                                                  " -e s,@@ES_HEAP_SIZE,", { "Fn::FindInMap" : [ "InstanceMap", { "Ref" : "ElkInstanceType" }, "ESHeapSize" ]}, ",g",
-                                                  " /etc/init/elasticsearch.conf" ] ] },
+                            "echo \"vm.overcommit_memory=1\" >> /usr/lib/sysctl.d/elasticsearch.conf",
 
                             { "Fn::If": [
                                 "UseEBS",
@@ -320,18 +367,25 @@
                                     "mount /dev/xvdb /data"
                                 ]]}
                             ]},
-
                             "chown elasticsearch /data",
 
-                            "sysctl vm.overcommit_memory=1",
+                            "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
+                            "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
 
-                            "cd /opt",
-                            "wget -O elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz",
-                            "tar zxvf elk-stack.tar.gz",
-                            "mv elk-stack-master/src logcabin",
+                            "# Install Kibana",
+
+                            "wget -O /tmp/kibana-latest.tar.gz https://download.elastic.co/kibana/kibana/kibana-4.1.0-linux-x64.tar.gz",
+                            "tar zxf /tmp/kibana-latest.tar.gz -C /opt",
+                            "mv /opt/kibana-* /opt/kibana",
+
+                            "# Install Logcabin",
+
+                            "wget -O /tmp/elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz",
+                            "tar zxf /tmp/elk-stack.tar.gz",
+                            "mv /tmp/elk-stack-master/src /opt/logcabin",
                             "adduser --disabled-password --gecos \"\" logcabin",
-                            "cd logcabin && npm install && cd ..",
-                            "chown -R logcabin logcabin",
+                            "cd /opt/logcabin && npm install && cd ..",
+                            "chown -R logcabin /opt/logcabin",
 
                             "wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js",
                             { "Fn::Join": [ "", [ "sed -i",
@@ -345,37 +399,43 @@
                                 " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g",
                                 " -e s,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g",
                                 " /opt/logcabin/config.js" ] ] },
-                            "wget -O /etc/init/logcabin.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-logcabin.conf",
 
-                            "wget http://download.elasticsearch.org/kibana/kibana/kibana-latest.tar.gz",
-                            "tar zxvf kibana-latest.tar.gz",
-                            "mv kibana-latest kibana",
+                            "# Start services",
+                            "wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/guardian/elk-stack/master/config/systemd-kibana.service",
 
-                            "start logstash",
-                            "start elasticsearch",
-                            "start logcabin",
+                            "systemctl start logstash && systemctl enable logstash",
+                            "systemctl start elasticsearch && systemctl enable elasticsearch",
+                            "systemctl start kibana && systemctl enable kibana",
 
-                            "while ! nc -z localhost 9200; do sleep 5; done; echo Elasticsearch is up!",
-                            { "Fn::Join": [ "", [
-                                "curl -XPUT 'http://localhost:9200/_snapshot/s3' -d '{",
-                                    "\"type\": \"s3\",",
-                                    "\"settings\": {",
-                                        "\"bucket\": \"", { "Ref" : "ElkS3Bucket" }, "\",",
-                                        "\"region\": \"", { "Ref" : "AWS::Region" }, "\"",
-                                     "}",
-                                "}' && echo"
-                                ]
+                            "# Setup S3 snapshots",
+                            { "Fn::If": [
+                                "HasS3",
+                                { "Fn::Join": [ "\n", [
+                                    "while ! nc -z localhost 9200; do sleep 5; done; echo Elasticsearch is up!",
+                                    { "Fn::Join": [ "", [
+                                        "curl -XPUT 'http://localhost:9200/_snapshot/s3' -d '{",
+                                            "\"type\": \"s3\",",
+                                            "\"settings\": {",
+                                                "\"bucket\": \"", { "Ref" : "ElkS3Bucket" }, "\",",
+                                                "\"region\": \"", { "Ref" : "AWS::Region" }, "\"",
+                                             "}",
+                                        "}' && echo"
+                                        ]
+                                    ]},
+                                    "curl 'http://localhost:9200/_snapshot/s3?pretty'",
+
+                                    "wget -O /usr/local/bin/backup.sh https://raw.githubusercontent.com/guardian/elk-stack/master/scripts/backup.sh",
+                                    "chmod +x /usr/local/bin/backup.sh",
+                                    "echo '15 0 * * * root /usr/local/bin/backup.sh' >/etc/cron.d/backup"
+                                ]]},
+                                ""
                             ]},
-                            "curl 'http://localhost:9200/_snapshot/s3?pretty'",
-
-                            "wget -O /usr/local/bin/backup.sh https://raw.githubusercontent.com/guardian/elk-stack/master/scripts/backup.sh",
-                            "chmod +x /usr/local/bin/backup.sh",
-                            "echo '15 0 * * * root /usr/local/bin/backup.sh' >/etc/cron.d/backup",
+                            "# Setup schedule to delete old indexes",
 
                             "pip install elasticsearch-curator",
                             { "Fn::Join": [ "", [
                                 "echo '30 0 * * * root /usr/local/bin/curator --logfile /var/log/elasticsearch/curator.log delete indices --older-than ",
-                                { "Ref" : "ElkIndexKeepDays" },
+                                { "Ref" : "IndexKeepDays" },
                                 " --time-unit days --timestring \"\\%Y.\\%m.\\%d\"' >/etc/cron.d/curator"
                                 ]
                             ]}
@@ -472,45 +532,6 @@
             }
         },
 
-        "Role": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "Path": "/",
-                "AssumeRolePolicyDocument": {
-                    "Statement": [
-                        {
-                            "Action": "sts:AssumeRole",
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": [ "ec2.amazonaws.com" ]
-                            }
-                        }
-                    ]
-                },
-                "Policies": [
-                    {
-                        "PolicyName":"ec2-describe-instances",
-                        "PolicyDocument": {
-                            "Version" : "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Action": "ec2:DescribeInstances",
-                                    "Effect": "Allow",
-                                    "Resource": "*"
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        },
-        "InstanceProfile": {
-            "Type": "AWS::IAM::InstanceProfile",
-            "Properties": {
-                "Path": "/",
-                "Roles": [ { "Ref": "Role" } ]
-            }
-        },
         "KibanaAlias": {
             "Type" : "AWS::Route53::RecordSetGroup",
             "Condition": "HasDNS",
