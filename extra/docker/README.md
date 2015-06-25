@@ -1,3 +1,6 @@
+Dockerfile for Kibana 3
+=======================
+
 For example:
 
 	docker build -t elk .
