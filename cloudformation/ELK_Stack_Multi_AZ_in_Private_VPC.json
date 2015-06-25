@@ -1,3 +1,4 @@
+
 {
     "AWSTemplateFormatVersion": "2010-09-09",
 
@@ -91,12 +92,23 @@
             "Description": "Keep indices for x number of days",
             "Type": "Number",
             "Default": "8"
+        },
+        "KibanaVersion": {
+            "Description": "KibanaVersion",
+            "Type": "String",
+            "Default": "kibana-latest",
+            "AllowedValues": [
+                "kibana-latest",
+                "kibana-4.0.2-linux-x64"
+            ],
+            "ConstraintDescription": "must be a valid kibana version"
         }
     },
 
     "Conditions": {
         "HasDNS": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "HostedZoneName" }, "" ] } ] },
-        "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]}
+        "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]},
+        "Kibana3": { "Fn::Equals" : [ { "Ref" : "KibanaVersion" }, "kibana-latest" ] }
     },
 
     "Mappings" : {
@@ -115,6 +127,18 @@
             "m3.large": { "ESHeapSize": "4g" },
             "m3.xlarge": { "ESHeapSize": "8g" },
             "m3.2xlarge": { "ESHeapSize": "15g" }
+        },
+        "AppVersionMap": {
+            "kibana-latest": {
+                "LogstashAptVersion": "1.4",
+                "ElasticSearchAptVersion": "1.3",
+                "ElasticSearchPluginAWS": "2.1.1"
+            },
+            "kibana-4.0.2-linux-x64": {
+                "LogstashAptVersion": "1.4",
+                "ElasticSearchAptVersion": "1.4",
+                "ElasticSearchPluginAWS": "2.4.1"
+            }
         }
     },
 
@@ -170,7 +194,11 @@
                     {
                         "Protocol": "HTTP",
                         "LoadBalancerPort": "80",
-                        "InstancePort": "8080"
+                        "InstancePort":  {
+                            "Fn::If": [
+                                "Kibana3","8080", "5601"
+                            ]
+                        }
                     }
                 ],
                 "HealthCheck": {
@@ -276,10 +304,13 @@
                     "Fn::Base64": {
                         "Fn::Join": [ "\n", [
                             "#!/bin/bash -v",
-
+                            "echo \"127.0.0.1 `hostname`\" >> /etc/hosts",
                             "wget -O - http://packages.elasticsearch.org/GPG-KEY-elasticsearch | apt-key add -",
-                            "echo \"deb http://packages.elasticsearch.org/logstash/1.4/debian stable main\" > /etc/apt/sources.list.d/logstash.list",
-                            "echo \"deb http://packages.elasticsearch.org/elasticsearch/1.3/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list",
+
+                            { "Fn::Join": [ "", [
+                                "echo \"deb http://packages.elasticsearch.org/logstash/", { "Fn::FindInMap" : [ "AppVersionMap", { "Ref" : "KibanaVersion" }, "LogstashAptVersion" ]}, "/debian stable main\" > /etc/apt/sources.list.d/logstash.list;\n",
+                                "echo \"deb http://packages.elasticsearch.org/elasticsearch/", { "Fn::FindInMap" : [ "AppVersionMap", { "Ref" : "KibanaVersion" }, "ElasticSearchAptVersion" ]}, "/debian stable main\" > /etc/apt/sources.list.d/elasticsearch.list;\n"
+                            ]]},
 
                             "add-apt-repository -y ppa:chris-lea/node.js",
                             "apt-get -y update",
@@ -288,7 +319,10 @@
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
                             "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
 
-                            "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.1.1",
+                            { "Fn::Join": [ "", [
+                                "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/", { "Fn::FindInMap" : [ "AppVersionMap", { "Ref" : "KibanaVersion" }, "ElasticSearchPluginAWS" ]}, ";\n"
+                            ]]},
+
                             "/usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head",
                             "/usr/share/elasticsearch/bin/plugin --install lukas-vlcek/bigdesk",
                             "/usr/share/elasticsearch/bin/plugin --install karmi/elasticsearch-paramedic",
@@ -329,6 +363,7 @@
                             "wget -O elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/master.tar.gz",
                             "tar zxvf elk-stack.tar.gz",
                             "mv elk-stack-master/src logcabin",
+                            "adduser --disabled-password --gecos \"\" kibana",
                             "adduser --disabled-password --gecos \"\" logcabin",
                             "cd logcabin && npm install && cd ..",
                             "chown -R logcabin logcabin",
@@ -347,9 +382,30 @@
                                 " /opt/logcabin/config.js" ] ] },
                             "wget -O /etc/init/logcabin.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/upstart-logcabin.conf",
 
-                            "wget http://download.elasticsearch.org/kibana/kibana/kibana-latest.tar.gz",
-                            "tar zxvf kibana-latest.tar.gz",
-                            "mv kibana-latest kibana",
+                            { "Fn::Join": [ "", [
+                                "wget -O kibana.tar.gz https://download.elastic.co/kibana/kibana/",{ "Ref": "KibanaVersion" },".tar.gz;",
+                                "tar zxvf kibana.tar.gz;",
+                                "ln -svf /opt/kibana-* /opt/kibana;"
+                            ]]},
+
+                            "# Kibana version specific",
+                            { "Fn::If": [
+                                "Kibana3",
+                                { "Fn::Join": [ "\n", [
+                                    "# is kibana 3"
+                                ]]},
+                                { "Fn::Join": [ "\n", [
+                                    "# is kibana 4",
+                                    "cd /opt/kibana/src;",
+                                    "wget -O auth.patch https://gist.githubusercontent.com/ajohnstone/3829cb02e983d6102c3e/raw/238bd2d85d93612f6da9a8f3d3b485ead5bc15c4/gistfile1.txt",
+                                    "patch < auth.patch",
+                                    "cp -v /opt/logcabin/config.js /opt/kibana/src/config/security.js",
+                                    "cp -v /opt/logcabin/lib/* /opt/kibana/src/lib/",
+                                    "npm install passport passport-google-oauth client-sessions",
+                                    "wget -O /etc/init/kibana.conf https://gist.githubusercontent.com/ajohnstone/f46fc279a0e7de4edcc4/raw/a3eaba51044fabc630243df5e80abf19cedee985/upstart-kibana.conf",
+                                    "start kibana"
+                                ]]}
+                            ]},
 
                             "start logstash",
                             "start elasticsearch",
@@ -404,6 +460,12 @@
                         "FromPort": "8080",
                         "ToPort": "8080",
                         "CidrIp": "0.0.0.0/0"
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "5601",
+                        "ToPort": "5601",
+                        "CidrIp": "0.0.0.0/0"
                     }
                 ]
             }
@@ -449,6 +511,12 @@
                         "IpProtocol": "tcp",
                         "FromPort": "8080",
                         "ToPort": "8080",
+                        "SourceSecurityGroupId": { "Ref": "ElkPublicLoadBalancerSecurityGroup" }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "5601",
+                        "ToPort": "5601",
                         "SourceSecurityGroupId": { "Ref": "ElkPublicLoadBalancerSecurityGroup" }
                     },
                     {
