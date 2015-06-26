@@ -64,11 +64,13 @@ The following elasticsearch plugins are installed:
 
 The "head" and "paramedic" web pages are available at proxied (ie. authenticated) endpoints based where the ELK stack is deployed:
 
-  * Head      -> http://<ELB>/__es/_plugin/head/
-  * Paramedic -> http://<ELB>/__es/_plugin/paramedic/
+  * Head      -> `http://<ELB>/__es/_plugin/head/`
+  * Paramedic -> `http://<ELB>/__es/_plugin/paramedic/`
 
 Configuration
 -------------
+
+This ELK stack cloudformation template takes many parameters, explainations for each are shown when launching the stack. Note that Route 53 DNS, EBS volumes and S3 snapshots are optional.
 
 Logstash grok patterns can be tested online at https://grokdebug.herokuapp.com/
 
