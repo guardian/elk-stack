@@ -53,6 +53,20 @@ Installation
 
 3. Once the ELK stack has launched revisit the Google developer console and update the URLs copying the output for `GoogleOAuthRedirectURL` to `AUTHORIZED REDIRECT URI` and the same URL but without to path to `AUTHORISED JAVASCRIPT ORIGINS`.
 
+Plugins
+-------
+
+The following elasticsearch plugins are installed:
+
+  * [AWS Cloud plugin][8] - uses AWS API for the unicast discovery mechanism
+  * [elasticsearch-head][9] - web frontend for elasticsearch cluster
+  * [ElasticSearch Paramedic][10] - a simple tool to inspect the state and statistics about ElasticSearch clusters
+
+The "head" and "paramedic" web pages are available at proxied (ie. authenticated) endpoints based where the ELK stack is deployed:
+
+  * Head      -> http://<ELB>/__es/_plugin/head/
+  * Paramedic -> http://<ELB>/__es/_plugin/paramedic/
+
 Configuration
 -------------
 
@@ -85,3 +99,6 @@ License
 [5]: <https://console.developers.google.com> "Google Developer Console"
 [6]: <http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html> "AWS: Your VPC and Subnets"
 [7]: <https://console.aws.amazon.com/vpc/>
+[8]: <https://github.com/elastic/elasticsearch-cloud-aws>
+[9]: <http://mobz.github.io/elasticsearch-head/>
+[10]: <https://github.com/karmi/elasticsearch-paramedic>
