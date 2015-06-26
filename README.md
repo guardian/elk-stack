@@ -62,7 +62,7 @@ The following elasticsearch plugins are installed:
   * [elasticsearch-head][9] - web frontend for elasticsearch cluster
   * [ElasticSearch Paramedic][10] - a simple tool to inspect the state and statistics about ElasticSearch clusters
 
-The "head" and "paramedic" web pages are available at proxied (ie. authenticated) endpoints based where the ELK stack is deployed:
+The "head" and "paramedic" web pages are available at proxied (ie. authenticated) endpoints based on how the ELK stack is deployed:
 
   * Head      -> `http://<ELB>/__es/_plugin/head/`
   * Paramedic -> `http://<ELB>/__es/_plugin/paramedic/`
