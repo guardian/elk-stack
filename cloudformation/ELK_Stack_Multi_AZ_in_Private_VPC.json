@@ -335,7 +335,7 @@
 
                             "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch nodejs ntp npm python-pip",
 
-                            "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.5.1",
+                            "/usr/share/elasticsearch/bin/plugin --install elasticsearch/elasticsearch-cloud-aws/2.6.0",
                             "/usr/share/elasticsearch/bin/plugin --install mobz/elasticsearch-head",
                             "/usr/share/elasticsearch/bin/plugin --install karmi/elasticsearch-paramedic",
 
