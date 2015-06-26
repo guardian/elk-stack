@@ -67,12 +67,14 @@ function nonAuthenticated(config, url) {
 }
 
 function findUser(profile, accessToken, config, callback)  {
-    var username = profile.displayName || 'unknown'
+    var username = profile.displayName || 'unknown';
+    var email = profile.emails[0].value || '';
+    var domain = profile._json.domain || '';
 
-    if ( (  ((profile._json || {} ).email || '').split('@')[1] === config.allowed_domain ) || profile._json.domain === config.allowed_domain ) {
+    if ( (  email.split('@')[1] === config.allowed_domain ) || domain === config.allowed_domain ) {
         return callback(true, username)
     } else {
-        console.log('access refused to: ' + username)
+        console.log('access refused to: ' + username + ' (email=' + email + ';domain=' + domain + ')');
         return callback(false, username + ' is not authorized')
     }
 }
