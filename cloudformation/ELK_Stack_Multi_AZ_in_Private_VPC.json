@@ -220,7 +220,7 @@
                     }
                 ],
                 "HealthCheck": {
-                    "Target": "HTTP:8080/",
+                    "Target": "HTTP:8080/__es/",
                     "Timeout": "10",
                     "Interval": "20",
                     "UnhealthyThreshold": "10",
@@ -571,8 +571,8 @@
                 { "Fn::If" : [ "HasDNS",
                     { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
                     { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
-                ]}, "/#/dashboard/file/logstash.json"]] },
-            "Description": "URL for the Kibana Dashboard"
+                ]}, "/"]] },
+            "Description": "URL for the Kibana 4 Dashboard"
         },
         "GoogleOAuthRedirectUrl": {
             "Value": { "Fn::Join": ["", ["http://",
