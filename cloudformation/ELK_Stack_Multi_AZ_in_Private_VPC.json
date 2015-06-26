@@ -316,7 +316,6 @@
                     ]
                 } ],
                 "IamInstanceProfile": { "Ref": "InstanceProfile" },
-                "AssociatePublicIpAddress": "false",
                 "KeyName": { "Ref": "KeyName" },
                 "UserData": {
                     "Fn::Base64": {
