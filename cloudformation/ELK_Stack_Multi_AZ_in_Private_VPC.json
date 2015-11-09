@@ -73,6 +73,16 @@
             "Description": "Subnets to use in VPC for instances eg. subnet-abcd1234",
             "Type": "List<AWS::EC2::Subnet::Id>"
         },
+        "VpcIpRangeCidr" : {
+            "Description": "VPC IP range eg. 10.0.0.0/8",
+            "Type": "String",
+            "Default": "0.0.0.0/0"
+        },
+        "AllowedSshCidr" : {
+            "Description": "IP range to allow SSH access from eg. 1.2.3.4/21",
+            "Type": "String",
+            "Default": "0.0.0.0/0"
+        },
         "HostedZoneName": {
             "Description": "Route53 Hosted Zone in which kibana aliases will be created (without the trailing dot). Leave blank for no ALIAS.",
             "Type": "String",
@@ -480,7 +490,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": "6379",
                         "ToPort": "6379",
-                        "CidrIp": "0.0.0.0/0"
+                        "CidrIp": { "Ref": "VpcIpRangeCidr" }
                     }
                 ],
                 "SecurityGroupEgress": [
@@ -488,7 +498,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": "6379",
                         "ToPort": "6379",
-                        "CidrIp": "0.0.0.0/0"
+                        "CidrIp": { "Ref": "VpcIpRangeCidr" }
                     }
                 ]
             }
@@ -516,7 +526,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": "22",
                         "ToPort": "22",
-                        "CidrIp": "0.0.0.0/0"
+                        "CidrIp": { "Ref": "AllowedSshCidr" }
                     }
                 ]
             }
