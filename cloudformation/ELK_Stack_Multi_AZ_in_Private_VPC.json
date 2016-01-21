@@ -31,14 +31,7 @@
         "ElkInstanceType": {
             "Description": "EC2 instance type",
             "Type": "String",
-            "Default": "m4.large",
-            "AllowedValues": [
-                "t2.medium",
-                "m4.large",
-                "m4.xlarge",
-                "m4.2xlarge"
-            ],
-            "ConstraintDescription": "must be a valid EC2 instance type"
+            "Default": "m4.large"
         },
         "CookieSecret": {
             "Description": "Secret used to sign the session ID cookie ie. any random string",
