@@ -36,7 +36,8 @@
                 "t2.medium",
                 "m4.large",
                 "m4.xlarge",
-                "m4.2xlarge"
+                "m4.2xlarge",
+                "r3.xlarge"
             ],
             "ConstraintDescription": "must be a valid EC2 instance type"
         },
@@ -128,8 +129,8 @@
             "t2.medium":  { "ESHeapSize": "2g" },
             "m4.large":   { "ESHeapSize": "4g" },
             "m4.xlarge":  { "ESHeapSize": "8g" },
-            "m4.2xlarge": { "ESHeapSize": "15g" }
-        }
+            "m4.2xlarge": { "ESHeapSize": "15g" },
+            "r3.xlarge": { "ESHeapSize": "15g" }
     },
 
     "Resources": {
