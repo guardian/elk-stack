@@ -49,9 +49,11 @@ Installation
 
    You can leave the URLs as they are and update them once the ELK stack has been created. Take note of the Client ID and Client Secret as you will need them in the next step.
 
-2. Launch the ELK stack using the AWS console or `aws` command-line tool and enter the required parameters. Note that some parameters, like providing a Route53 Hosted Zone Name to create a DNS alias for the public ELB, are optional.
+2. Enable the "Google+ API" for your new client. This is the only Google API needed.
 
-3. Once the ELK stack has launched revisit the Google developer console and update the URLs copying the output for `GoogleOAuthRedirectURL` to `AUTHORIZED REDIRECT URI` and the same URL but without to path to `AUTHORISED JAVASCRIPT ORIGINS`.
+3. Launch the ELK stack using the AWS console or `aws` command-line tool and enter the required parameters. Note that some parameters, like providing a Route53 Hosted Zone Name to create a DNS alias for the public ELB, are optional.
+
+4. Once the ELK stack has launched revisit the Google developer console and update the URLs copying the output for `GoogleOAuthRedirectURL` to `AUTHORIZED REDIRECT URI` and the same URL but without to path to `AUTHORISED JAVASCRIPT ORIGINS`.
 
 Plugins
 -------
