@@ -114,15 +114,15 @@
 
     "Mappings" : {
         "RegionMap" : {
-            "us-east-1" :      { "ImageId": "ami-41986a2a" },
-            "us-west-2" :      { "ImageId": "ami-35d4ee05" },
-            "us-west-1" :      { "ImageId": "ami-5915e11d" },
-            "eu-west-1" :      { "ImageId": "ami-b7443fc0" },
-            "eu-central-1" :   { "ImageId": "ami-1afbc307" },
-            "ap-southeast-1" : { "ImageId": "ami-205c5872" },
-            "ap-southeast-2" : { "ImageId": "ami-990a70a3" },
-            "ap-northeast-1" : { "ImageId": "ami-ee72a8ee" },
-            "sa-east-1" :      { "ImageId": "ami-7727a46a" }
+            "us-east-1" :      { "ImageId": "ami-370c225d" },
+            "us-west-2" :      { "ImageId": "ami-2f06e04f" },
+            "us-west-1" :      { "ImageId": "ami-4e1a6c2e" },
+            "eu-west-1" :      { "ImageId": "ami-9f388eec" },
+            "eu-central-1" :   { "ImageId": "ami-c59189a9" },
+            "ap-southeast-1" : { "ImageId": "ami-ec7ab58f" },
+            "ap-southeast-2" : { "ImageId": "ami-f6b79395" },
+            "ap-northeast-1" : { "ImageId": "ami-190e3477" },
+            "sa-east-1" :      { "ImageId": "ami-ff1f9f93" }
         },
         "InstanceMap": {
             "t2.medium":  { "ESHeapSize": "2g" },
@@ -340,6 +340,9 @@
                             "add-apt-repository -y ppa:chris-lea/node.js",
                             "sleep 1",
                             "apt-get -y update",
+
+                            "# Make sure base system is up to date",
+                            "apt-get -y upgrade",
 
                             "# Install Logstash & Elasticsearch",
 
