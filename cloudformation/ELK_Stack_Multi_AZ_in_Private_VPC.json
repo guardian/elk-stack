@@ -114,15 +114,15 @@
 
     "Mappings" : {
         "RegionMap" : {
-            "us-east-1" :      { "ImageId": "ami-41986a2a" },
-            "us-west-2" :      { "ImageId": "ami-35d4ee05" },
-            "us-west-1" :      { "ImageId": "ami-5915e11d" },
-            "eu-west-1" :      { "ImageId": "ami-b7443fc0" },
-            "eu-central-1" :   { "ImageId": "ami-1afbc307" },
-            "ap-southeast-1" : { "ImageId": "ami-205c5872" },
-            "ap-southeast-2" : { "ImageId": "ami-990a70a3" },
-            "ap-northeast-1" : { "ImageId": "ami-ee72a8ee" },
-            "sa-east-1" :      { "ImageId": "ami-7727a46a" }
+            "us-east-1" :      { "ImageId": "ami-8d4071e7" },
+            "us-west-2" :      { "ImageId": "ami-4b37d42b" },
+            "us-west-1" :      { "ImageId": "ami-bcafdedc" },
+            "eu-west-1" :      { "ImageId": "ami-36289a45" },
+            "eu-central-1" :   { "ImageId": "ami-30677d5c" },
+            "ap-southeast-1" : { "ImageId": "ami-af965fcc" },
+            "ap-northeast-1" : { "ImageId": "ami-552a2b3b" },
+            "ap-southeast-2" : { "ImageId": "ami-5195b232" },
+            "sa-east-1" :      { "ImageId": "ami-df0586b3" }
         },
         "InstanceMap": {
             "t2.medium":  { "ESHeapSize": "2g" },
