@@ -385,7 +385,6 @@
                             "chown elasticsearch /data",
 
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
-                            "sed -i -e 's,@@ELASTICSEARCH,localhost,g' /etc/logstash/conf.d/logstash-indexer.conf",
 
                             "# Install Kibana",
 
