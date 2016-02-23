@@ -1,13 +1,13 @@
 ELK Stack with Google OAuth
 ===========================
 
-ELK stands for [Elasticsearch][1], [Logstash][2] and [Kibana 4][3] and is being promoted by Elasticsearch as a "devops" logging solution.
+ELK stands for [Elasticsearch 2][1], [Logstash 2][2] and [Kibana 4][3] and is being promoted by Elasticsearch as a "devops" logging solution.
 
 This implemenation of an ELK stack is designed to run in AWS EC2 VPC and is secured using Google OAuth 2.0. It consists of one or more instances behind an Elastic Load Balancer (ELB) running the following components:
 
-* Kibana 4
-* Elasticsearch
-* Logstash indexer
+* Kibana 4.x
+* Elasticsearch 2.x
+* Logstash 2.x indexer
 * Node.js application proxy
 
 Security
@@ -62,12 +62,10 @@ The following elasticsearch plugins are installed:
 
   * [AWS Cloud plugin][8] - uses AWS API for the unicast discovery mechanism
   * [elasticsearch-head][9] - web frontend for elasticsearch cluster
-  * [ElasticSearch Paramedic][10] - a simple tool to inspect the state and statistics about ElasticSearch clusters
 
-The "head" and "paramedic" web pages are available at proxied (ie. authenticated) endpoints based on how the ELK stack is deployed:
+The "head" plugin web page is available at proxied (ie. authenticated) endpoints based on how the ELK stack is deployed:
 
   * Head      -> `http://<ELB>/__es/_plugin/head/`
-  * Paramedic -> `http://<ELB>/__es/_plugin/paramedic/`
 
 Configuration
 -------------
@@ -82,7 +80,7 @@ License
 -------
 
     Guardian ELK Stack Cloudformation Templates and Logcabin Proxy
-    Copyright 2015 Guardian News & Media
+    Copyright 2014-2016 Guardian News & Media
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -103,6 +101,6 @@ License
 [5]: <https://console.developers.google.com> "Google Developer Console"
 [6]: <http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html> "AWS: Your VPC and Subnets"
 [7]: <https://console.aws.amazon.com/vpc/>
-[8]: <https://github.com/elastic/elasticsearch-cloud-aws>
+[8]: <https://github.com/elastic/elasticsearch/tree/2.0/plugins/cloud-aws>
 [9]: <http://mobz.github.io/elasticsearch-head/>
-[10]: <https://github.com/karmi/elasticsearch-paramedic>
+
