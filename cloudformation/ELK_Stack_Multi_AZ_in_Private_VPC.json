@@ -361,6 +361,12 @@
                                 " >> /etc/default/elasticsearch"
                             ] ] },
 
+                            "cat >/etc/security/limits.conf << EOF",
+                            "# allow user 'elasticsearch' mlockall",
+                            "elasticsearch soft memlock unlimited",
+                            "elasticsearch hard memlock unlimited",
+                            "EOF",
+
                             "echo \"vm.overcommit_memory=1\" >> /usr/lib/sysctl.d/elasticsearch.conf",
 
                             { "Fn::If": [
@@ -538,7 +544,7 @@
                 "GroupId": { "Fn::GetAtt": [ "ElkSecurityGroup", "GroupId" ] },
                 "IpProtocol": "tcp",
                 "FromPort": "9300",
-                "ToPort": "9305",
+                "ToPort": "9400",
                 "SourceSecurityGroupId": { "Fn::GetAtt": [ "ElkSecurityGroup", "GroupId" ] }
             }
         },
