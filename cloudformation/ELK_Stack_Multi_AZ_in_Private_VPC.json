@@ -83,6 +83,11 @@
             "Type": "String",
             "Default": "0.0.0.0/0"
         },
+        "AllowedHttpCidr" : {
+            "Description": "IP range to allow HTTP access from eg. 1.2.3.4/21",
+            "Type": "String",
+            "Default": "0.0.0.0/0"
+        },
         "HostedZoneName": {
             "Description": "Route53 Hosted Zone in which kibana aliases will be created (without the trailing dot). Leave blank for no ALIAS.",
             "Type": "String",
@@ -472,7 +477,7 @@
                         "IpProtocol": "tcp",
                         "FromPort": "80",
                         "ToPort": "80",
-                        "CidrIp": "0.0.0.0/0"
+                        "CidrIp": {"Ref": "AllowedHttpCidr"}
                     }
                 ],
                 "SecurityGroupEgress": [
