@@ -341,7 +341,7 @@
 
                             "wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
                             "echo \"deb http://packages.elastic.co/elasticsearch/2.x/debian stable main\" > /etc/apt/sources.list.d/elasticsearch-2.x.list",
-                            "echo \"deb http://packages.elastic.co/logstash/2.2/debian stable main\" > /etc/apt/sources.list.d/logstash-2.x.list",
+                            "echo \"deb http://packages.elastic.co/logstash/2.3/debian stable main\" > /etc/apt/sources.list.d/logstash-2.x.list",
                             "curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -",
                             "sleep 1",
                             "apt-get -y update",
@@ -394,7 +394,7 @@
 
                             "# Install Kibana",
 
-                            "wget -O /tmp/kibana-latest.tar.gz https://download.elastic.co/kibana/kibana/kibana-4.4.1-linux-x64.tar.gz",
+                            "wget -O /tmp/kibana-latest.tar.gz https://download.elastic.co/kibana/kibana/kibana-4.5.0-linux-x64.tar.gz",
                             "tar zxf /tmp/kibana-latest.tar.gz -C /opt",
                             "mv /opt/kibana-* /opt/kibana",
 
