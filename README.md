@@ -25,7 +25,9 @@ The ELB requires a healthcheck to ensure instances in the load balancer are heal
 Log Shippers
 ------------
 
-Shipping logs to the ELK stack are left as an exercise for the user however example configurations are included in the repo under the `/examples` directory. TBC
+### via TCP
+
+Shipping logs to the ELK stack via tcp is left as an exercise for the user however example configurations are included in the repo under the `/examples` directory. TBC
 
 A very simple one that reads from stdin and tails a log file then echoes to stdout and forwards to the ELK stack is below:
 
@@ -34,6 +36,12 @@ $ logstash --debug -e '
 input { stdin { } file { path => "/var/log/system.log" } }
 output { stdout { } tcp { host => "INSERT-ELB-DNS-NAME-HERE" port => 6379 codec => json_lines } }'
 ```
+
+### via a Kinesis Stream
+
+Logstash is also setup to ingest logs via a Kinesis Stream using the [logstash-input-kinesis](https://github.com/codekitchen/logstash-input-kinesis) plugin.
+You can find the Kinesis stream information in the Cloudformation stack output. 
+The expected input codec is `json`.
 
 VPC Configuration
 -----------------
