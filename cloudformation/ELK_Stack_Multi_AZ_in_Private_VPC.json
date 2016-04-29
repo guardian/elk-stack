@@ -215,6 +215,111 @@
                 ]
             }
         },
+        "ElkKinesisPublisherRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "Path": "/",
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Action": "sts:AssumeRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "AWS": { "Fn::Join": [ "", [ "arn:aws:iam::", { "Ref": "AWS::AccountId"  }, ":root"  ]  ]  }
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        "ElkKinesisDynamoDBTable" : {
+            "Type" : "AWS::DynamoDB::Table",
+            "Properties" : {
+                "AttributeDefinitions" : [
+                    {
+                        "AttributeName" : "leaseKey",
+                        "AttributeType" : "S"
+                    }
+                ],
+                "KeySchema" : [
+                    {
+                        "AttributeName" : "leaseKey",
+                        "KeyType" : "HASH"
+                    }
+                ],
+                "ProvisionedThroughput" : {
+                    "ReadCapacityUnits" : "10",
+                    "WriteCapacityUnits" : "5"
+                }
+            }
+        },
+        "ElkKinesisStream" : {
+            "Type" : "AWS::Kinesis::Stream",
+            "Properties" : {
+                "ShardCount" : "1"
+            }
+        },
+        "ElkKinesisPublisherPolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "elk-kinesis-publisher",
+                "PolicyDocument": {
+                    "Version" : "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kinesis:PutRecord",
+                                "kinesis:DescribeStream"
+                            ],
+                            "Resource" : { "Fn::Join" : [ "", [ "arn:aws:kinesis:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":stream/", { "Ref" : "ElkKinesisStream" } ]]}
+                        }
+                    ]
+                },
+                "Roles": [ {
+                    "Ref": "ElkKinesisPublisherRole"
+                } ]
+            }
+        },
+        "ElkKinesisReaderPolicy": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "elk-kinesis-reader",
+                "PolicyDocument": {
+                    "Version" : "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "dynamodb:*"
+                            ],
+                            "Resource" : { "Fn::Join" : [ "", [ "arn:aws:dynamodb:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":table/", { "Ref" : "ElkKinesisDynamoDBTable" } ]]}
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kinesis:GetRecords",
+                                "kinesis:GetShardIterator",
+                                "kinesis:DescribeStream"
+                            ],
+                            "Resource" : { "Fn::Join" : [ "", [ "arn:aws:kinesis:", { "Ref" : "AWS::Region" }, ":", { "Ref" : "AWS::AccountId" }, ":stream/", { "Ref" : "ElkKinesisStream" } ]]}
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Action": [
+                                "kinesis:ListStreams"
+                            ],
+                            "Resource": [
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                "Roles": [ {
+                    "Ref": "Role"
+                } ]
+            }
+        },
         "InstanceProfile": {
             "Type": "AWS::IAM::InstanceProfile",
             "Properties": {
@@ -390,7 +495,15 @@
                             ]},
                             "chown elasticsearch /data",
 
+                            "# Configure Logstash",
+                            "/opt/logstash/bin/plugin install logstash-input-kinesis",
+
                             "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf",
+                            { "Fn::Join": [ "", [ "sed -i",
+                                " -e s,@@KINESIS_STREAM_NAME,", { "Ref": "ElkKinesisStream" }, ",g",
+                                " -e s,@@KINESIS_APPLICATION_NAME,", { "Ref": "ElkKinesisDynamoDBTable" }, ",g",
+                                " -e s,@@KINESIS_REGION,", { "Ref": "AWS::Region" }, ",g",
+                                " /etc/logstash/conf.d/logstash-indexer.conf" ] ] },
 
                             "# Install Kibana",
 
@@ -602,6 +715,15 @@
                     { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
                 ]}, "/auth/google/callback"]] },
             "Description": "Redirect URL for the Google Developers Console"
+        },
+        "KinesisStream": {
+            "Value": { "Ref": "ElkKinesisStream"  }
+        },
+        "KinesisRegion": {
+            "Value": { "Ref": "AWS::Region" }
+        },
+        "KinesisRole": {
+            "Value": { "Fn::GetAtt": [ "ElkKinesisPublisherRole", "Arn"  ]  }
         }
     }
 }
