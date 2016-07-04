@@ -567,7 +567,7 @@
                             ]},
                             "# Setup schedule to delete old indexes",
 
-                            "pip install elasticsearch-curator",
+                            "pip install elasticsearch-curator==3.5.1",
                             { "Fn::Join": [ "", [
                                 "echo '30 0 * * * root /usr/local/bin/curator --logfile /var/log/elasticsearch/curator.log delete indices --older-than ",
                                 { "Ref" : "IndexKeepDays" },
