@@ -1,6 +1,7 @@
 module.exports =  {
     'host': 'localhost:9201',
     'listen_port': 9201,
+    'apiKeys': ['YOUR_API_KEY'],
     'cookie_secret': 'DAX52Zo15CWfBUnoyp4rjY',
     'oauth_unauthenticated': ['/__es/'],
     'oauth_application_name': 'logcabin-local',

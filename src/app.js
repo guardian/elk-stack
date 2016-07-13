@@ -3,7 +3,7 @@ var http = require('http')
 var fs = require('fs')
 var config = require('./config')
 // var github = require('./lib/github-oauth')
-var github = require('./lib/google-oauth')
+var auth = require('./lib/auth')
 var sessions = require("client-sessions")
 
 var app = express()
@@ -12,7 +12,7 @@ console.log('Logcabin starting...')
 
 app.use(sessions({ cookieName: 'session', secret: config.cookie_secret }))
 
-github.setupOAuth(express, app, config)
+auth.setup(express, app, config)
 
 proxyES()
 proxyKibana4()
