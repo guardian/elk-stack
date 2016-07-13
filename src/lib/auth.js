@@ -2,9 +2,11 @@ var request = require('request')
 var passport = require('passport')
 var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 
+
 exports.setup = function(express, app, config) {
 
     console.log('Google OAuth2 authentication used')
+
 
     passport.serializeUser(function(user, done) {
       done(null, user)
@@ -79,6 +81,6 @@ function findUser(profile, accessToken, config, callback)  {
 }
 
 function verifyApiKey(config, req)  {
-    var apiKey = req.headers['apikey'] || req.query['apikey'] || '';
-    return (config.apiKeys.indexOf(apiKey) > -1)
+    var apiKey = req.headers['authorization'] || '';
+    return (config.apiKey.length > 0 && "ApiKey " + config.apiKey === apiKey)
 }

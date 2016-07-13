@@ -2,7 +2,6 @@ var express = require('express')
 var http = require('http')
 var fs = require('fs')
 var config = require('./config')
-// var github = require('./lib/github-oauth')
 var auth = require('./lib/auth')
 var sessions = require("client-sessions")
 
