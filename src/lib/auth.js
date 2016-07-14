@@ -3,7 +3,7 @@ var passport = require('passport')
 var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 
 
-exports.setupOAuth = function(express, app, config) {
+exports.setup = function(express, app, config) {
 
     console.log('Google OAuth2 authentication used')
 
@@ -29,7 +29,7 @@ exports.setupOAuth = function(express, app, config) {
     }))
 
     app.use(function(req, res, next) {
-        if (req.session.authenticated || nonAuthenticated(config, req.url)) {
+        if (req.session.authenticated || nonAuthenticated(config, req.url) || verifyApiKey(config, req)) {
             return next()
         }
         req.session.beforeLoginURL = req.url
@@ -37,6 +37,7 @@ exports.setupOAuth = function(express, app, config) {
     })
     app.use(passport.initialize())
     app.use(passport.session())
+
 
     var scope = ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email']
 
@@ -77,4 +78,9 @@ function findUser(profile, accessToken, config, callback)  {
         console.log('access refused to: ' + username + ' (email=' + email + ';domain=' + domain + ')');
         return callback(false, username + ' is not authorized')
     }
+}
+
+function verifyApiKey(config, req)  {
+    var apiKey = req.headers['authorization'] || '';
+    return (config.apiKey.length > 0 && "ApiKey " + config.apiKey === apiKey)
 }

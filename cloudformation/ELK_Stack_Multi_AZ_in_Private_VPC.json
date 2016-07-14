@@ -47,6 +47,11 @@
             "AllowedPattern" : "[a-zA-Z0-9_-]*",
             "ConstraintDescription": "must only contain upper and lower case letters, numbers, dashes and underscores"
         },
+        "ApiKey": {
+            "Description": "Api key used to make server to server request to the cluster without Google OAuth, ie: any random string",
+            "Type": "String",
+            "NoEcho": true
+        },
         "GoogleOAuthClientId": {
             "Description": "Google OAuth 2.0 Client ID",
             "Type": "String"
@@ -527,6 +532,7 @@
                                         { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
                                         { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ] }
                                     ]}, ",g",
+                                " -e s,@@API_KEY,", { "Ref": "ApiKey" }, ",g",
                                 " -e s,@@COOKIE_SECRET,", { "Ref": "CookieSecret" }, ",g",
                                 " -e s,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g",
                                 " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g",

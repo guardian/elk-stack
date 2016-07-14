@@ -1,6 +1,7 @@
 module.exports =  {
     'host': '@@LOGCABIN_HOST',
     'listen_port': 8080,
+    'apiKey': '@@API_KEY',
     'cookie_secret': '@@COOKIE_SECRET',
     'oauth_unauthenticated': ['/__es/', '/__es/_cat/health'],
     'oauth_application_name': 'logcabin',
