@@ -425,7 +425,7 @@
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
                 "ImageId": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "ImageId" ]},
-                "SecurityGroups": [ { "Ref": "ElkSecurityGroup" }, { "Ref": "ElkPublicLoadBalancerSecurityGroup" }, { "Ref": "ElkInternalLoadBalancerSecurityGroup" } ],
+                "SecurityGroups": [ { "Ref": "ElkSecurityGroup" } ],
                 "InstanceType": { "Ref": "ElkInstanceType" },
                 "BlockDeviceMappings": [ {
                     "Fn::If": [
