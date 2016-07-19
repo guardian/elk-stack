@@ -16,7 +16,7 @@ exports.setup = function(express, app, config) {
       done(null, obj)
     })
 
-    var callbackUrl = 'http://' + config.host + '/auth/google/callback'
+    var callbackUrl = config.host + '/auth/google/callback'
 
     passport.use(new GoogleStrategy({
             clientID: config.oauth_client_id,

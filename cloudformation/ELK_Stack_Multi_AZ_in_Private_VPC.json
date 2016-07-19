@@ -113,13 +113,18 @@
             "Description": "Keep elasticsearch indices for x number of days",
             "Type": "Number",
             "Default": "8"
+        },
+        "PublicLoadBalancerSSLCertificateARN": {
+            "Description": "ARN of the SSL certificate applied to the public load balancer",
+            "Type": "String"
         }
     },
 
     "Conditions": {
         "HasDNS": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "HostedZoneName" }, "" ] } ] },
         "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]},
-        "HasS3": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "SnapshotRepository" }, "" ] } ] }
+        "HasS3": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "SnapshotRepository" }, "" ] } ] },
+        "HasSSLCertificate": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "PublicLoadBalancerSSLCertificateARN" }, "" ] } ] }
     },
 
     "Mappings" : {
@@ -339,9 +344,11 @@
                 "CrossZone": true,
                 "Listeners": [
                     {
-                        "Protocol": "HTTP",
-                        "LoadBalancerPort": "80",
-                        "InstancePort": "8080"
+                        "Protocol": { "Fn::If" : [ "HasSSLCertificate", "HTTPS", "HTTP" ] },
+                        "LoadBalancerPort": { "Fn::If" : [ "HasSSLCertificate", "443", "80" ] },
+                        "InstanceProtocol": "HTTP",
+                        "InstancePort": "8080",
+                        "SSLCertificateId": { "Ref": "PublicLoadBalancerSSLCertificateARN" }
                     }
                 ],
                 "HealthCheck": {
@@ -528,9 +535,12 @@
                             "wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js",
                             { "Fn::Join": [ "", [ "sed -i",
                                 " -e s,@@LOGCABIN_HOST,",
-                                    { "Fn::If" : [ "HasDNS",
-                                        { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
-                                        { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ] }
+                                    { "Fn::Join": ["", 
+                                        [{ "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
+                                        { "Fn::If" : [ "HasDNS",
+                                            { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
+                                            { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
+                                        ]}]
                                     ]}, ",g",
                                 " -e s,@@API_KEY,", { "Ref": "ApiKey" }, ",g",
                                 " -e s,@@COOKIE_SECRET,", { "Ref": "CookieSecret" }, ",g",
@@ -707,7 +717,7 @@
             "Description": "Logging endpoint for Logstash TCP input"
         },
         "KibanaURL": {
-            "Value": { "Fn::Join": ["", ["http://",
+            "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
                 { "Fn::If" : [ "HasDNS",
                     { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
                     { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
@@ -715,7 +725,7 @@
             "Description": "URL for the Kibana 4 Dashboard"
         },
         "GoogleOAuthRedirectUrl": {
-            "Value": { "Fn::Join": ["", ["http://",
+            "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
                 { "Fn::If" : [ "HasDNS",
                     { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
                     { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
