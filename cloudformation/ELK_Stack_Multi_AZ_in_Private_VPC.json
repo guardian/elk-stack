@@ -61,7 +61,7 @@
     },
     "GoogleOAuthClientId": {
       "Description": "Google OAuth 2.0 Client ID",
-      "Type": "String",
+      "Type": "String"
     },
     "GoogleOAuthClientSecret": {
       "Description": "Google OAuth 2.0 Client Secret",
@@ -70,19 +70,19 @@
     },
     "AllowedDomain": {
       "Description": "Google apps domain eg. gmail.com or example.com",
-      "Type": "String",
+      "Type": "String"
     },
     "VpcId": {
       "Description": "ID of the VPC onto which to launch the application eg. vpc-1234abcd",
-      "Type": "AWS::EC2::VPC::Id",
+      "Type": "AWS::EC2::VPC::Id"
     },
     "PublicVpcSubnets": {
       "Description": "Subnets to use in VPC for public ELB eg. subnet-abcd1234",
-      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Type": "List<AWS::EC2::Subnet::Id>"
     },
     "PrivateVpcSubnets": {
       "Description": "Subnets to use in VPC for instances eg. subnet-abcd1234",
-      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Type": "List<AWS::EC2::Subnet::Id>"
     },
     "VpcIpRangeCidr": {
       "Description": "VPC IP range eg. 10.0.0.0/8",
@@ -91,16 +91,16 @@
     },
     "AllowedSshCidr": {
       "Description": "IP range to allow SSH access from eg. 1.2.3.4/21",
-      "Type": "String",
+      "Type": "String"
     },
     "AllowedHttpCidr": {
       "Description": "IP range to allow HTTP access from eg. 1.2.3.4/21",
-      "Type": "String",
+      "Type": "String"
     },
     "HostedZoneName": {
       "Description": "Route53 Hosted Zone in which kibana aliases will be created (without the trailing dot). Leave blank for no ALIAS.",
       "Type": "String",
-      "AllowedPattern": "^(.*[^.]|)$",
+      "AllowedPattern": "^(.*[^.]|)$"
     },
     "EBSVolumeSize": {
       "Description": "EBS storage to be attached to each instance (in GB). Set to zero for no attached EBS volume (the on-instance storage will be used instead).",
@@ -120,7 +120,7 @@
     },
     "PublicLoadBalancerSSLCertificateARN": {
       "Description": "ARN of the SSL certificate applied to the public load balancer",
-      "Type": "String",
+      "Type": "String"
     }
   },
   "Conditions": {
@@ -601,7 +601,7 @@
 	  "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "VpcId": { "Ref": "VpcId" },
-        "GroupDescription": "Allow access to elasticsearch on internal ELB from members of this group",
+        "GroupDescription": "Allow access to elasticsearch on internal ELB from members of this group"
       }
     },
     
