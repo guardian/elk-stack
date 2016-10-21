@@ -1,3 +1,25 @@
+What the fork?
+==============
+
+This fork answers a couple of issues I encountered with the original design.
+
+Do you want to:
+
+* use ELK but not lose the features of having an Elastic search cluster over HTTP interface?
+
+* use AWS's provided OAuth solution (Cognito) over an external service with 0 configuration on your part? [todo]
+
+* not deal with Authentication at all and prefer strong firewall rules to define access?
+
+* use Ubuntu 16.10LTS with up to date packages
+
+* provide your team with a snap in docker container preconfigured to capture stderr/stdout and ship to kinesis [todo]
+
+
+Then this fork is for you!
+
+
+
 ELK Stack with Google OAuth
 ===========================
 
@@ -13,9 +35,9 @@ This implemenation of an ELK stack is designed to run in AWS EC2 VPC and is secu
 Security
 --------
 
-Only the Logstash indexer and the application proxy ports are exposed on the ELB and all requests to the application proxy for Kibana or Elasticsearch are authenticated using Google OAuth.
+Only Elasticsearch HTTP, Logstash indexer, and the application proxy ports are exposed on the ELB and all requests to the application proxy for Kibana or Elasticsearch are authenticated using Google OAuth.
 
-Elasticsearch is configured to listen only on the local loopback address. Dynamic scripting has been disabled to address security concerns with [remote code execution][4] since elasticsearch version 1.4.3.
+Elasticsearch is configured to listen on the network but is firewalled to the ElkHttpSecurityGroup. Use this group to allow your client systems to update Elasticsearch. Dynamic scripting has been disabled to address security concerns with [remote code execution][4] since elasticsearch version 1.4.3.
 
 Healthcheck
 -----------
@@ -78,7 +100,7 @@ The "head" plugin web page is available at proxied (ie. authenticated) endpoints
 Configuration
 -------------
 
-This ELK stack cloudformation template takes many parameters, explainations for each are shown when launching the stack. Note that Route 53 DNS, EBS volumes and S3 snapshots are optional.
+This ELK stack cloudformation template takes many parameters, explanations for each are shown when launching the stack. Note that Route 53 DNS, EBS volumes and S3 snapshots are optional.
 
 Logstash grok patterns can be tested online at https://grokdebug.herokuapp.com/
 
