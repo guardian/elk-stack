@@ -377,7 +377,13 @@
             "Protocol": "TCP",
             "LoadBalancerPort": "6379",
             "InstancePort": "6379"
+          },
+          {
+            "Protocol": "HTTP",
+            "LoadBalancerPort": "9200",
+            "InstancePort": "9200"
           }
+
         ],
         "HealthCheck": {
           "Target": "TCP:6379",
