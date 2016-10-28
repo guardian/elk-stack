@@ -10,14 +10,13 @@
       "Type": "String"
     },
     "KeyName": {
-      "Default": "Intensity-Admin",
       "Description": "Name of an existing EC2 KeyPair for SSH access",
       "Type": "AWS::EC2::KeyPair::KeyName"
     },
     "Environment": {
       "Description": "Environment applied as a tag",
       "Type": "String",
-      "Default": "Production",
+      "Default": "Development",
       "AllowedValues": [
         "Production",
         "Staging",
@@ -49,15 +48,13 @@
       "Description": "Secret used to sign the session ID cookie ie. any random string",
       "Type": "String",
       "NoEcho": true,
-      "Default": "B35tBhu9m767SxR4h76WMGkQmYpjw5kJ",
       "AllowedPattern": "[a-zA-Z0-9_-]*",
       "ConstraintDescription": "must only contain upper and lower case letters, numbers, dashes and underscores"
     },
     "ApiKey": {
       "Description": "Api key used to make server to server request to the cluster without Google OAuth, ie: any random string",
       "Type": "String",
-      "NoEcho": true,
-      "Default": "FE99BDF75B9F2B9DDE83F4C76E32F"
+      "NoEcho": true
     },
     "GoogleOAuthClientId": {
       "Description": "Google OAuth 2.0 Client ID",
@@ -86,8 +83,7 @@
     },
     "VpcIpRangeCidr": {
       "Description": "VPC IP range eg. 10.0.0.0/8",
-      "Type": "String",
-      "Default": "10.0.0.0/16"
+      "Type": "String"
     },
     "AllowedSshCidr": {
       "Description": "IP range to allow SSH access from eg. 1.2.3.4/21",
@@ -466,7 +462,7 @@
               "wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -",
               "echo \"deb http://packages.elastic.co/elasticsearch/2.x/debian stable main\" > /etc/apt/sources.list.d/elasticsearch-2.x.list",
               "echo \"deb http://packages.elastic.co/logstash/2.3/debian stable main\" > /etc/apt/sources.list.d/logstash-2.x.list",
-              "curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -",
+              "curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -",
               "sleep 1",
               "apt-get -y update",
               "apt-get -y upgrade",
@@ -734,7 +730,7 @@
         "Comment" : "Alias to kibana elb",
         "RecordSets" : [
           {
-            "Name" : { "Fn::Join": [".", [ "kibana-production", {"Ref": "Stack"}, {"Ref": "HostedZoneName"} ]] },
+            "Name" : { "Fn::Join": [".", [ "kibana", {"Ref": "Environment"}, {"Ref": "HostedZoneName"} ]] },
             "Type" : "A",
             "AliasTarget" : {
               "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -742,7 +738,7 @@
             }
           },
           {
-            "Name" : { "Fn::Join": [".", [ "logstash-production", {"Ref": "HostedZoneName"} ]] },
+            "Name" : { "Fn::Join": [".", [ "logstash", {"Ref": "Environment"}, {"Ref": "HostedZoneName"} ]] },
             "Type" : "A",
             "AliasTarget" : {
               "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },

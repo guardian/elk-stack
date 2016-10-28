@@ -1,6 +1,6 @@
 #!/bin/sh
 
-AMI_IMAGE_NAME="ubuntu/images/hvm-ssd/ubuntu-wily-15.10-amd64-server-20160217.1"
+AMI_IMAGE_NAME="ubuntu/images/hvm-ssd/ubuntu-yakkety-16.10-amd64-server-20161012.3"
 
 # http://docs.aws.amazon.com/general/latest/gr/rande.html#ec2_region
 

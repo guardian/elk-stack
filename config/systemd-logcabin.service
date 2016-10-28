@@ -7,7 +7,7 @@ StandardError=syslog
 SyslogIdentifier=logcabin
 User=logcabin
 Group=logcabin
-Environment=
+Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
