@@ -551,12 +551,12 @@
                 " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g",
                 " -e s,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g",
                 " /opt/logcabin/config.js" ] ] },
-
+              "# Set environment variables",
+              "REGION=`curl http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print $4}'`",
               "# Start services",
               "wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-logcabin.service",
               "wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-kibana.service",
-              "export INST_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)",
-              "export ENVIRONMENT=$(aws ec2 describe-tags --filters Name=resource-id,Values=ec2metadata --instance-id $INST_ID --out=json|jq '.Tags[]| select(.Key == \"Environment\")|.Value'))",
+              "export ENVIRONMENT=$(aws --region $REGION ec2 describe-tags --filters Name=key,Values=Environment --out=json|jq '.Tags[]| select(.Key == \"Environment\")|.Value')",
               "systemctl start logstash && systemctl enable logstash",
               "systemctl start elasticsearch && systemctl enable elasticsearch",
               "systemctl start kibana && systemctl enable kibana",
@@ -731,10 +731,9 @@
         "Comment" : "Alias to kibana elb",
         "RecordSets" : [
           {
-            "Name" : { "Fn::Join": [ "",
-              {"Fn::Join": ["-", ["kibana", {"Ref": "Environment"}]]},
-              {"Fn::Join": [".", [{"Ref": "HostedZoneName"}]]}
-            ]},
+            "Name": {
+              "Fn::Join": [ "", [ { "Fn::Join": [ "-", [ "kibana", { "Ref": "Environment"}, { "Fn::Join": [ ".", [ { "Ref": "HostedZoneName"}]]}]]}]]
+            },
             "Type" : "A",
             "AliasTarget" : {
               "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -742,10 +741,9 @@
             }
           },
           {
-            "Name" : { "Fn::Join": [ "",
-              {"Fn::Join": ["-", ["logstash", {"Ref": "Environment"}]]},
-              {"Fn::Join": [".", [{"Ref": "HostedZoneName"}]]}
-            ]},
+            "Name": {
+              "Fn::Join": [ "", [{ "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}, { "Fn::Join": [ ".", [{ "Ref": "HostedZoneName"}] ] } ] ] } ]]
+            },
             "Type" : "A",
             "AliasTarget" : {
               "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
