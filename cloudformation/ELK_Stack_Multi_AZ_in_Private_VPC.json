@@ -552,7 +552,7 @@
                 " -e s,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g",
                 " /opt/logcabin/config.js" ] ] },
               "# Set environment variables",
-              "REGION=`curl http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print $4}'`",
+              "export REGION=`curl http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print $4}'`",
               "# Start services",
               "wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-logcabin.service",
               "wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-kibana.service",
