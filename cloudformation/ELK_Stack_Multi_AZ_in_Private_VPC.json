@@ -213,7 +213,7 @@
               "Version" : "2012-10-17",
               "Statement": [
                 {
-                  "Action": "ec2:DescribeInstances",
+                  "Action": ["ec2:DescribeInstances", "ec2:DescribeTags"],
                   "Effect": "Allow",
                   "Resource": "*"
                 }
@@ -469,7 +469,7 @@
 
               "# Install Logstash & Elasticsearch",
 
-              "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch npm nodejs build-essential ntp python-pip",
+              "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch npm nodejs build-essential ntp python-pip awscli jq",
               "update-ca-certificates -f",
 
               "/usr/share/elasticsearch/bin/plugin install cloud-aws -b",
@@ -555,7 +555,8 @@
               "# Start services",
               "wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-logcabin.service",
               "wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-kibana.service",
-
+              "export INST_ID=$(curl http://169.254.169.254/latest/meta-data/instance-id)",
+              "export ENVIRONMENT=$(aws ec2 describe-tags --filters Name=resource-id,Values=ec2metadata --instance-id $INST_ID --out=json|jq '.Tags[]| select(.Key == \"Environment\")|.Value'))",
               "systemctl start logstash && systemctl enable logstash",
               "systemctl start elasticsearch && systemctl enable elasticsearch",
               "systemctl start kibana && systemctl enable kibana",
