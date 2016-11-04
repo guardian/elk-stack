@@ -731,7 +731,7 @@
         "Comment" : "Alias to kibana elb",
         "RecordSets" : [
           {
-            "Name" : { "Fn::Join": [
+            "Name" : { "Fn::Join": [ "",
               {"Fn::Join": ["-", ["kibana", {"Ref": "Environment"}]]},
               {"Fn::Join": [".", [{"Ref": "HostedZoneName"}]]}
             ]},
@@ -742,7 +742,7 @@
             }
           },
           {
-            "Name" : { "Fn::Join": [
+            "Name" : { "Fn::Join": [ "",
               {"Fn::Join": ["-", ["logstash", {"Ref": "Environment"}]]},
               {"Fn::Join": [".", [{"Ref": "HostedZoneName"}]]}
             ]},
