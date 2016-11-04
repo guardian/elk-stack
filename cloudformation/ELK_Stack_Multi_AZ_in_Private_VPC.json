@@ -551,7 +551,7 @@
                 " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g",
                 " -e s,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g",
                 " /opt/logcabin/config.js" ] ] },
-                
+
               "# Start services",
               "wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-logcabin.service",
               "wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-kibana.service",
@@ -599,7 +599,7 @@
         }
       }
     },
-    
+
     "ElkHttpSecurityGroup": {
 	  "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
@@ -607,7 +607,7 @@
         "GroupDescription": "Allow access to elasticsearch on internal ELB from members of this group"
       }
     },
-    
+
     "ElkHttpSecurityGroupIngress": {
       "Type": "AWS::EC2::SecurityGroupIngress",
       "Properties": {
@@ -731,7 +731,10 @@
         "Comment" : "Alias to kibana elb",
         "RecordSets" : [
           {
-            "Name" : { "Fn::Join": [".", [ "kibana", {"Ref": "Environment"}, {"Ref": "HostedZoneName"} ]] },
+            "Name" : { "Fn::Join": [
+              {"Fn::Join": ["-", [ "kibana", {"Ref": "Environment"}]]},
+              {"Fn::Join": [".", {"Ref": "HostedZoneName"}]}
+            ]},
             "Type" : "A",
             "AliasTarget" : {
               "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
@@ -739,7 +742,10 @@
             }
           },
           {
-            "Name" : { "Fn::Join": [".", [ "logstash", {"Ref": "Environment"}, {"Ref": "HostedZoneName"} ]] },
+            "Name" : { "Fn::Join": [
+              {"Fn::Join": ["-", [ "logstash", {"Ref": "Environment"}]]},
+              {"Fn::Join": [".", {"Ref": "HostedZoneName"}]}
+            ]},
             "Type" : "A",
             "AliasTarget" : {
               "HostedZoneId" : { "Fn::GetAtt" : ["ElkInternalLoadBalancer", "CanonicalHostedZoneNameID"] },
