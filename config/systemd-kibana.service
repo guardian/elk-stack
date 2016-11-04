@@ -6,7 +6,7 @@ StandardError=syslog
 SyslogIdentifier=kibana4
 User=root
 Group=root
-Environment=NODE_ENV=production
+Environment=NODE_ENV=${ENVIRONMENT}
 
 [Install]
 WantedBy=multi-user.target
