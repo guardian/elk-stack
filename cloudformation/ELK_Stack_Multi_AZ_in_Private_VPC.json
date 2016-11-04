@@ -732,7 +732,7 @@
         "RecordSets" : [
           {
             "Name": {
-              "Fn::Join": [ "", [ { "Fn::Join": [ "-", [ "kibana", { "Ref": "Environment"}]]}, { "Fn::Join": [ ".", [ { "Ref": "HostedZoneName"}]]}]]
+              "Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "kibana", { "Ref": "Environment"}]]}, { "Ref": "HostedZoneName"}]]
             },
             "Type" : "A",
             "AliasTarget" : {
@@ -742,7 +742,7 @@
           },
           {
             "Name": {
-              "Fn::Join": [ "", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Fn::Join": [ ".", [ { "Ref": "HostedZoneName"}]]}]]
+              "Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Ref": "HostedZoneName"}]]
             },
             "Type" : "A",
             "AliasTarget" : {
@@ -763,7 +763,7 @@
     "KibanaURL": {
       "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
         { "Fn::If" : [ "HasDNS",
-          {"Fn::Join": [ "", [ { "Fn::Join": [ "-", [ "kibana", { "Ref": "Environment"}]]}, { "Fn::Join": [ ".", [ { "Ref": "HostedZoneName"}]]}]]},
+          {"Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "kibana", { "Ref": "Environment"}]]}, { "Ref": "HostedZoneName"}]]},
           { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
         ]}, "/"]] },
       "Description": "URL for the Kibana 4 Dashboard"
