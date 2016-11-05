@@ -475,7 +475,7 @@
 
               "# Install Logstash & Elasticsearch",
 
-              "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch npm nodejs build-essential ntp python-pip awscli jq",
+              "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch nodejs build-essential ntp python-pip awscli jq",
               "update-ca-certificates -f",
 
               "/usr/share/elasticsearch/bin/plugin install cloud-aws -b",
