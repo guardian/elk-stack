@@ -98,6 +98,11 @@
       "Type": "String",
       "AllowedPattern": "^(.*[^.]|)$"
     },
+    "PrivateHostedZoneName": {
+      "Description": "Route53 Private Hosted Zone in which logstash aliases will be created (without the trailing dot). Leave blank for no ALIAS.",
+      "Type": "String",
+      "AllowedPattern": "^(.*[^.]|)$"
+    },
     "EBSVolumeSize": {
       "Description": "EBS storage to be attached to each instance (in GB). Set to zero for no attached EBS volume (the on-instance storage will be used instead).",
       "Type": "Number",
@@ -120,7 +125,8 @@
     }
   },
   "Conditions": {
-    "HasDNS": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "HostedZoneName" }, "" ] } ] },
+    "HasPublicDNS": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "HostedZoneName" }, "" ] } ] },
+    "HasPrivateDNS": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "PrivateHostedZoneName" }, "" ] } ] },
     "UseEBS": { "Fn::Not": [ { "Fn::Equals" : [ { "Ref" : "EBSVolumeSize" }, "0" ] } ]},
     "HasS3": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "SnapshotRepository" }, "" ] } ] },
     "HasSSLCertificate": { "Fn::Not" : [ { "Fn::Equals" : [ { "Ref" : "PublicLoadBalancerSSLCertificateARN" }, "" ] } ] }
@@ -540,8 +546,8 @@
                 " -e s,@@LOGCABIN_HOST,",
                 { "Fn::Join": ["",
                   [{ "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
-                    { "Fn::If" : [ "HasDNS",
-                      { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
+                    { "Fn::If" : [ "HasPublicDNS",
+                      { "Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "kibana", { "Ref": "Environment"}]]}, { "Ref": "HostedZoneName"}]]},
                       { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
                     ]}]
                 ]}, ",g",
@@ -550,7 +556,8 @@
                 " -e s,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g",
                 " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g",
                 " -e s,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g",
-                " /opt/logcabin/config.js" ] ] },
+                " /opt/logcabin/config.js" ] ]
+              },
               "# Set environment variables",
               "export REGION=`curl http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print $4}'`",
               "# Start services",
@@ -725,7 +732,7 @@
 
     "KibanaAlias": {
       "Type" : "AWS::Route53::RecordSetGroup",
-      "Condition": "HasDNS",
+      "Condition": "HasPublicDNS",
       "Properties" : {
         "HostedZoneName" : { "Fn::Join": ["", [{ "Ref" : "HostedZoneName" }, "."]] },
         "Comment" : "Alias to kibana elb",
@@ -739,10 +746,20 @@
               "HostedZoneId" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer", "CanonicalHostedZoneNameID"] },
               "DNSName" : { "Fn::GetAtt" : ["ElkPublicLoadBalancer","DNSName"] }
             }
-          },
+          }
+        ]
+      }
+    },
+    "LogstashAlias": {
+      "Type" : "AWS::Route53::RecordSetGroup",
+      "Condition": "HasPrivateDNS",
+      "Properties" : {
+        "HostedZoneName" : { "Fn::Join": ["", [{ "Ref" : "PrivateHostedZoneName" }, "."]] },
+        "Comment" : "Alias to internal logstash elb",
+        "RecordSets" : [
           {
             "Name": {
-              "Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Ref": "HostedZoneName"}]]
+              "Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Ref": "PrivateHostedZoneName"}]]
             },
             "Type" : "A",
             "AliasTarget" : {
@@ -762,16 +779,24 @@
     },
     "KibanaURL": {
       "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
-        { "Fn::If" : [ "HasDNS",
+        { "Fn::If" : [ "HasPublicDNS",
           {"Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "kibana", { "Ref": "Environment"}]]}, { "Ref": "HostedZoneName"}]]},
+          { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
+        ]}, "/"]] },
+      "Description": "URL for the Kibana 4 Dashboard"
+    },
+    "LogstashURL": {
+      "Value": { "Fn::Join": ["", ["http://",
+        { "Fn::If" : [ "HasPrivateDNS",
+          {"Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Ref": "PrivateHostedZoneName"}]]},
           { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
         ]}, "/"]] },
       "Description": "URL for the Kibana 4 Dashboard"
     },
     "GoogleOAuthRedirectUrl": {
       "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
-        { "Fn::If" : [ "HasDNS",
-          { "Fn::Join": [".", [ "kibana", {"Ref": "HostedZoneName"} ]] },
+        { "Fn::If" : [ "HasPublicDNS",
+          { "Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "kibana", { "Ref": "Environment"}]]}, { "Ref": "HostedZoneName"}]] },
           { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
         ]}, "/auth/google/callback"]] },
       "Description": "Redirect URL for the Google Developers Console"
