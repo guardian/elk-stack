@@ -475,7 +475,7 @@
 
               "# Install Logstash & Elasticsearch",
 
-              "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch nodejs build-essential ntp python-pip awscli jq",
+              "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch nodejs build-essential ntp python-pip",
               "update-ca-certificates -f",
 
               "/usr/share/elasticsearch/bin/plugin install cloud-aws -b",
@@ -559,14 +559,12 @@
                 " /opt/logcabin/config.js" ] ]
               },
               "# Set environment variables",
-              "export REGION=`curl http://169.254.169.254/latest/dynamic/instance-identity/document|grep region|awk -F\" '{print $4}'`",
-              "export INSTANCE_ID=`curl http://169.254.169.254/latest/dynamic/instance-identity/document|jq '.instanceId'`",
+              {"Fn::Join": ["", ["export ENVIRONMENT=", {"Ref": "Environment"}]]},
 
               "# Start services",
               "wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-logcabin.service",
               "wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-kibana.service",
               "systemctl start logstash && systemctl enable logstash",
-              "export ENVIRONMENT=$(aws ec2 describe-tags --region $REGION --filters \"Name=resource-id,Values=$INSTANCE_ID\" --out=json|jq '.Tags[]| select(.Key == \"Environment\")|.Value')",
               "systemctl start elasticsearch && systemctl enable elasticsearch",
               "systemctl start kibana && systemctl enable kibana",
               "systemctl start logcabin && systemctl enable logcabin",
