@@ -534,7 +534,7 @@
               "wget -O /opt/kibana/config/kibana.yml https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/kibana.yml",
               {
                 "Fn::Join": [ "", [ "sed -i",
-                  " -e s,@@HOSTNAME,", "$(curl http://169.254.169.254/latest/meta-data/local-hostname)", ",g",
+                  " -e s,@@HOSTNAME,", "localhost", ",g",
                   " /opt/kibana/config/kibana.yml" ]
                 ]
               },
