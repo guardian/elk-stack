@@ -531,7 +531,12 @@
               "wget -O /tmp/kibana-latest.tar.gz https://download.elastic.co/kibana/kibana/kibana-4.5.0-linux-x64.tar.gz",
               "tar zxf /tmp/kibana-latest.tar.gz -C /opt",
               "mv /opt/kibana-* /opt/kibana",
-
+              "wget -O /opt/kibana/config/kibana.yml https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/kibana.yml",
+              {
+                "Fn::Join": [ "", [ "sed -i",
+                  " -e s,@@HOSTNAME,", "$(curl http://169.254.169.254/latest/meta-data/local-hostname)", ",g"]
+                ]
+              },
               "# Install Logcabin",
 
               "wget -O /tmp/elk-stack.tar.gz https://github.com/toadkicker/elk-stack/archive/master.tar.gz",
