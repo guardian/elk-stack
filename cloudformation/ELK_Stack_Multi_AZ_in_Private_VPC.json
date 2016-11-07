@@ -638,10 +638,20 @@
         "GroupDescription": "Allow access to kibana on public ELB from internet",
         "SecurityGroupIngress": [
           {
-            "IpProtocol": "tcp",
-            "FromPort": "80",
-            "ToPort": "80",
-            "CidrIp": {"Ref": "AllowedHttpCidr"}
+            "Fn::If" : [ "HasSSLCertificate", {
+              "IpProtocol": "tcp",
+              "FromPort": "443",
+              "ToPort": "443",
+              "CidrIp": {"Ref": "AllowedHttpCidr"}
+            }]
+          },
+          {
+            "Fn::Not" : [ "HasSSLCertificate", {
+              "IpProtocol": "tcp",
+              "FromPort": "80",
+              "ToPort": "80",
+              "CidrIp": {"Ref": "AllowedHttpCidr"}
+            }]
           }
         ],
         "SecurityGroupEgress": [
