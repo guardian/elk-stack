@@ -66,7 +66,7 @@
       "NoEcho": true
     },
     "AllowedDomain": {
-      "Description": "Google apps domain eg. gmail.com or example.com",
+      "Description": "Google apps domain eg. gmail.com or mycompany.com",
       "Type": "String"
     },
     "VpcId": {
@@ -789,10 +789,6 @@
   },
 
   "Outputs": {
-    "LogstashEndpoint": {
-      "Value": { "Fn::Join": ["", [ { "Fn::GetAtt": [ "ElkInternalLoadBalancer", "DNSName" ]}, ":6379"]] },
-      "Description": "Logging endpoint for Logstash TCP input"
-    },
     "KibanaURL": {
       "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
         { "Fn::If" : [ "HasPublicDNS",
@@ -801,13 +797,13 @@
         ]}, "/"]] },
       "Description": "URL for the Kibana 4 Dashboard"
     },
-    "LogstashURL": {
+    "LogstashPrivateEndpoint": {
       "Value": { "Fn::Join": ["", ["http://",
         { "Fn::If" : [ "HasPrivateDNS",
-          {"Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Ref": "PrivateHostedZoneName"}]]},
+          {"Fn::Join": ["", [{"Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Ref": "PrivateHostedZoneName"}], ":6379"]}]]},
           { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
         ]}, "/"]] },
-      "Description": "URL for the Kibana 4 Dashboard"
+      "Description": "URL for the Logstash Endpoint"
     },
     "GoogleOAuthRedirectUrl": {
       "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
