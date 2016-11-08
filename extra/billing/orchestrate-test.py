@@ -26,11 +26,11 @@ if __name__ == '__main__':
     # rows of data in the csv, must be given as string
     data_count = '315'
     while(True):
-        index_names = subprocess.check_output(['curl -XGET "elasticsearch:9200/_cat/indices/"'], shell=True, stderr=subprocess.PIPE)
+        index_names = subprocess.check_output(['curl -XGET "localhost:9200/_cat/indices/"'], shell=True, stderr=subprocess.PIPE)
         if 'aws-billing-2016.06' in index_names and data_count in index_names:
             break
 
-    index_names = subprocess.check_output(['curl -XGET "elasticsearch:9200/_cat/indices/"'], shell=True, stderr=subprocess.PIPE)
+    index_names = subprocess.check_output(['curl -XGET "localhost:9200/_cat/indices/"'], shell=True, stderr=subprocess.PIPE)
     print(index_names)
 
     tools.index_kibana()
