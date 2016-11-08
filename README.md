@@ -28,8 +28,12 @@ ELK stands for [Elasticsearch 2][1], [Logstash 2][2] and [Kibana 4][3] and is be
 This implemenation of an ELK stack is designed to run in AWS EC2 VPC and is secured using Google OAuth 2.0. It consists of one or more instances behind an Elastic Load Balancer (ELB) running the following components:
 
 * Kibana 4.x
+* * Sense
+* * Logtrail
 * Elasticsearch 2.x
+* * ES Head
 * Logstash 2.x indexer
+* Logcabin
 * Node.js application proxy
 
 Security

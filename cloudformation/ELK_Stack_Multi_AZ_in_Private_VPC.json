@@ -122,6 +122,19 @@
     "PublicLoadBalancerSSLCertificateARN": {
       "Description": "ARN of the SSL certificate applied to the public load balancer",
       "Type": "String"
+    },
+    "BillingBucketName": {
+      "Description": "The bucket where AWS bills are stored for display in Kibana.",
+      "Type": "String"
+    },
+    "BillingBucketPath": {
+      "Description": "The path where AWS bills are stored inside the bucket. Leave empty or add / to use the top level directory",
+      "Type": "String",
+      "Default": "/"
+    },
+    "BillingReportName": {
+      "Description": "The name of the billing report given in the Bill and Cost Management section of AWS.",
+      "Type": "String"
     }
   },
   "Conditions": {
@@ -472,11 +485,23 @@
               "sleep 1",
               "apt-get -y update",
               "apt-get -y upgrade",
-
-              "# Install Logstash & Elasticsearch",
-
               "apt-get -y install ruby ruby-dev logstash openjdk-8-jre-headless openjdk-8-jdk elasticsearch nodejs build-essential ntp python-pip",
               "update-ca-certificates -f",
+              "pip install boto3 pyelasticsearch nose",
+
+              "# Install Golang for parsing AWS Bills in S3",
+              {"Fn::Join": ["", ["export S3_BUCKET_NAME ", {"Ref": "BillingBucketName"}]]},
+              {"Fn::Join": ["", ["export S3_REPORT_PATH ", {"Ref": "BillingBucketPath"}]]},
+              {"Fn::Join": ["", ["export S3_REPORT_NAME ", {"Ref": "BillingReportName"}]]},
+              "export GOLANG_URL https://storage.googleapis.com/golang/go1.7.3.linux-amd64.tar.gz",
+              "export GOLANG_SHA256 508028aac0654e993564b6e2014bf2d4a9751e3b286661b0b0040046cf18028e",
+              "curl -fsSL $GOLANG_URL -o golang.tar.gz && echo $GOLANG_SHA256 golang.tar.gz | sha256sum -c - && tar -C /usr/local -xzf golang.tar.gz && rm golang.tar.gz",
+              "export GOPATH /go",
+              "export $PATH=$GOPATH/bin:/usr/local/go/bin:$PATH",
+              "mkdir -p  $GOPATH/src $GOPATH/bin && chmod -R 777 $GOPATH",
+              "cp https://raw.githubusercontent.com/toadkicker/elk-stack/master/extra/billing/go-wrapper /usr/local/bin/",
+
+              "# Install Logstash & Elasticsearch",
 
               "/usr/share/elasticsearch/bin/plugin install cloud-aws -b",
               "/usr/share/elasticsearch/bin/plugin install mobz/elasticsearch-head",
@@ -517,7 +542,7 @@
               "chown elasticsearch /data",
 
               "# Configure Logstash",
-              "/opt/logstash/bin/plugin install logstash-input-kinesis",
+              "/opt/logstash/bin/logstash-plugin install logstash-input-kinesis logstash-codec-cloudwatch_logs",
 
               "wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/logstash-indexer.conf",
               { "Fn::Join": [ "", [ "sed -i",
@@ -538,6 +563,8 @@
                   " /opt/kibana/config/kibana.yml" ]
                 ]
               },
+              "/opt/kibana/bin/kibana plugin --install elastic/sense",
+              "/opt/kibana/bin/kibana plugin --install sivasamyk/logtrail",
               "# Install Logcabin",
 
               "wget -O /tmp/elk-stack.tar.gz https://github.com/toadkicker/elk-stack/archive/master.tar.gz",
@@ -605,9 +632,13 @@
                 "echo '30 0 * * * root /usr/local/bin/curator --logfile /var/log/elasticsearch/curator.log delete indices --older-than ",
                 { "Ref" : "IndexKeepDays" },
                 " --time-unit days --timestring \"\\%Y.\\%m.\\%d\"' >/etc/cron.d/curator"
-              ]
-              ]}
-            ] ]
+                ]]
+              },
+
+              "# Setup Kibana Dashboard for billing",
+              "wget -O ./orchestrate.py https://raw.githubusercontent.com/toadkicker/elk-stack/master/extra/billing/orchestrate.py",
+              "python -u /orchestrate.py"
+            ]]
           }
         }
       }
