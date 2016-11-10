@@ -1,6 +1,6 @@
-FROM archlinux/jre
-RUN yes | pacman -Syu
-RUN yes | pacman -S nginx
+FROM ubuntu:latest
+RUN apt-get update -y
+RUN apt-get install -y nginx apt-utils curl default-jre
 WORKDIR /opt
 RUN curl -L https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.4.3.tar.gz | tar -xzf -
 # RUN echo '/opt/elasticsearch-1.4.3/bin/elasticsearch -d' >>/app/elasticsearch.sh

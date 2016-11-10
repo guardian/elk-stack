@@ -1,3 +1,22 @@
+What the fork?
+==============
+
+This fork answers a couple of issues I encountered with the original design.
+
+Do you want to:
+
+* Use Auth0 or Google Oauth for authentication, with more providers coming (AWS Cognito, Facebook, etc. File an issue if you want it.)
+
+* Not deal with Authentication at all and use strong firewall rules to define access?
+
+* use Ubuntu 16.10LTS with up to date packages
+
+* provide your team with a snap in docker container preconfigured to capture stderr/stdout and ship to kinesis [todo]
+
+
+Then this fork is for you!
+
+
 ELK Stack with Google OAuth
 ===========================
 
@@ -6,16 +25,20 @@ ELK stands for [Elasticsearch 2][1], [Logstash 2][2] and [Kibana 4][3] and is be
 This implemenation of an ELK stack is designed to run in AWS EC2 VPC and is secured using Google OAuth 2.0. It consists of one or more instances behind an Elastic Load Balancer (ELB) running the following components:
 
 * Kibana 4.x
+* * Sense
+* * Logtrail
 * Elasticsearch 2.x
+* * ES Head
 * Logstash 2.x indexer
+* Logcabin
 * Node.js application proxy
 
 Security
 --------
 
-Only the Logstash indexer and the application proxy ports are exposed on the ELB and all requests to the application proxy for Kibana or Elasticsearch are authenticated using Google OAuth.
+Only Elasticsearch HTTP, Logstash indexer, and the application proxy ports are exposed on the ELB and all requests to the application proxy for Kibana or Elasticsearch are authenticated using Google OAuth.
 
-Elasticsearch is configured to listen only on the local loopback address. Dynamic scripting has been disabled to address security concerns with [remote code execution][4] since elasticsearch version 1.4.3.
+Elasticsearch is configured to listen on the network but is firewalled to the ElkHttpSecurityGroup. Use this group to allow your client systems to update Elasticsearch. Dynamic scripting has been disabled to address security concerns with [remote code execution][4] since elasticsearch version 1.4.3.
 
 Healthcheck
 -----------
@@ -78,7 +101,7 @@ The "head" plugin web page is available at proxied (ie. authenticated) endpoints
 Configuration
 -------------
 
-This ELK stack cloudformation template takes many parameters, explainations for each are shown when launching the stack. Note that Route 53 DNS, EBS volumes and S3 snapshots are optional.
+This ELK stack cloudformation template takes many parameters, explanations for each are shown when launching the stack. Note that Route 53 DNS, EBS volumes and S3 snapshots are optional.
 
 Logstash grok patterns can be tested online at https://grokdebug.herokuapp.com/
 

@@ -234,7 +234,7 @@ bootstrap.mlockall: true
 # http.enabled: false
 
 http.host: _local_
-network.host: _ec2_
+
 
 ################################### Gateway ###################################
 
