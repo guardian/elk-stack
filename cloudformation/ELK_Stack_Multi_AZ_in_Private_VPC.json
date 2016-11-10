@@ -4,7 +4,6 @@
   "Description": "ELK Stack - Elasticsearch, Logstash, Kibana 4",
 
   "Parameters": {
-
     "Stack": {
       "Description": "Stack applied as a tag",
       "Type": "String"
@@ -44,6 +43,15 @@
       ],
       "ConstraintDescription": "must be a valid EC2 instance type"
     },
+    "LoginStrategy": {
+      "Description": "Choose a login strategy",
+      "Type": "String",
+      "Default": "Google",
+      "AllowedValues": [
+        "Google",
+        "Auth0"
+      ]
+    },
     "CookieSecret": {
       "Description": "Secret used to sign the session ID cookie ie. any random string",
       "Type": "String",
@@ -56,17 +64,17 @@
       "Type": "String",
       "NoEcho": true
     },
-    "GoogleOAuthClientId": {
+    "OAuthClientId": {
       "Description": "Google OAuth 2.0 Client ID",
       "Type": "String"
     },
-    "GoogleOAuthClientSecret": {
+    "OAuthClientSecret": {
       "Description": "Google OAuth 2.0 Client Secret",
       "Type": "String",
       "NoEcho": true
     },
     "AllowedDomain": {
-      "Description": "Google apps domain eg. gmail.com or mycompany.com",
+      "Description": "Domain associated with you OAuth provider, used for Oauth callbacks. e.g. mycompany.com",
       "Type": "String"
     },
     "VpcId": {
@@ -192,7 +200,9 @@
               ],
               "Effect": "Allow",
               "Resource": [
-                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "ElkS3Bucket" } ] ] } ]
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "ElkS3Bucket" } ] ] },
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "BillingBucketName" } ] ] }
+              ]
             },
             {
               "Action": [
@@ -202,7 +212,8 @@
               ],
               "Effect": "Allow",
               "Resource": [
-                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "ElkS3Bucket" } , "/*"] ] }
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "ElkS3Bucket" } , "/*"] ] },
+                { "Fn::Join" : [ "", [ "arn:aws:s3:::", { "Ref" : "BillingBucketName" } , "/*"] ] }
               ]
             }
           ]
@@ -456,6 +467,12 @@
         "ImageId": { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "ImageId" ]},
         "SecurityGroups": [ { "Ref": "ElkSecurityGroup" } ],
         "InstanceType": { "Ref": "ElkInstanceType" },
+        "EbsOptimized": {
+          "Fn::If": [
+            "UseEBS",
+            "True", "False"
+          ]
+        },
         "BlockDeviceMappings": [ {
           "Fn::If": [
             "UseEBS",
@@ -490,9 +507,9 @@
               "pip install boto3 pyelasticsearch nose",
 
               "# Install Golang for parsing AWS Bills in S3",
-              {"Fn::Join": ["", ["export S3_BUCKET_NAME ", {"Ref": "BillingBucketName"}]]},
-              {"Fn::Join": ["", ["export S3_REPORT_PATH ", {"Ref": "BillingBucketPath"}]]},
-              {"Fn::Join": ["", ["export S3_REPORT_NAME ", {"Ref": "BillingReportName"}]]},
+              {"Fn::Join": [" ", ["export S3_BUCKET_NAME", {"Ref": "BillingBucketName"}]]},
+              {"Fn::Join": [" ", ["export S3_REPORT_PATH", {"Ref": "BillingBucketPath"}]]},
+              {"Fn::Join": [" ", ["export S3_REPORT_NAME", {"Ref": "BillingReportName"}]]},
               "export GOLANG_URL https://storage.googleapis.com/golang/go1.7.3.linux-amd64.tar.gz",
               "export GOLANG_SHA256 508028aac0654e993564b6e2014bf2d4a9751e3b286661b0b0040046cf18028e",
               "curl -fsSL $GOLANG_URL -o golang.tar.gz && echo $GOLANG_SHA256 golang.tar.gz | sha256sum -c - && tar -C /usr/local -xzf golang.tar.gz && rm golang.tar.gz",
@@ -514,9 +531,11 @@
                 " /etc/elasticsearch/elasticsearch.yml" ] ] },
 
               { "Fn::Join": [ "", [
-                "echo ES_HEAP_SIZE=", { "Fn::FindInMap" : [ "InstanceMap", { "Ref" : "ElkInstanceType" }, "ESHeapSize" ]},
-                " >> /etc/default/elasticsearch"
-              ] ] },
+                  "echo ES_HEAP_SIZE=", { "Fn::FindInMap" : [ "InstanceMap", { "Ref" : "ElkInstanceType" }, "ESHeapSize" ]},
+                  " >> /etc/default/elasticsearch"
+                  ]
+                ]
+              },
 
               "cat >/etc/security/limits.conf << EOF",
               "# allow user 'elasticsearch' mlockall",
@@ -584,15 +603,16 @@
                       { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
                     ]}]
                 ]}, ",g",
+                " -e s,@@OAUTH_STRATEGY,", { "Ref": "LoginStrategy" }, ",g",
                 " -e s,@@API_KEY,", { "Ref": "ApiKey" }, ",g",
                 " -e s,@@COOKIE_SECRET,", { "Ref": "CookieSecret" }, ",g",
-                " -e s,@@CLIENT_ID,", { "Ref": "GoogleOAuthClientId" }, ",g",
-                " -e s,@@CLIENT_SECRET,", { "Ref": "GoogleOAuthClientSecret" }, ",g",
+                " -e s,@@CLIENT_ID,", { "Ref": "OAuthClientId" }, ",g",
+                " -e s,@@CLIENT_SECRET,", { "Ref": "OAuthClientSecret" }, ",g",
                 " -e s,@@ALLOWED_DOMAIN,", { "Ref": "AllowedDomain" }, ",g",
                 " /opt/logcabin/config.js" ] ]
               },
               "# Set environment variables",
-              {"Fn::Join": ["", ["export ENVIRONMENT=", {"Ref": "Environment"}]]},
+              {"Fn::Join": [" ", ["export ENVIRONMENT", {"Ref": "Environment"}]]},
 
               "# Start services",
               "wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/toadkicker/elk-stack/master/config/systemd-logcabin.service",
@@ -637,7 +657,7 @@
 
               "# Setup Kibana Dashboard for billing",
               "wget -O ./orchestrate.py https://raw.githubusercontent.com/toadkicker/elk-stack/master/extra/billing/orchestrate.py",
-              "python -u /orchestrate.py"
+              "python -u ./orchestrate.py"
             ]]
           }
         }
@@ -669,20 +689,16 @@
         "GroupDescription": "Allow access to kibana on public ELB from internet",
         "SecurityGroupIngress": [
           {
-            "Fn::If" : [ "HasSSLCertificate", {
-              "IpProtocol": "tcp",
-              "FromPort": "443",
-              "ToPort": "443",
-              "CidrIp": {"Ref": "AllowedHttpCidr"}
-            }]
+            "IpProtocol": "tcp",
+            "FromPort": "443",
+            "ToPort": "443",
+            "CidrIp": { "Ref": "AllowedHttpCidr" }
           },
           {
-            "Fn::Not" : [ "HasSSLCertificate", {
-              "IpProtocol": "tcp",
-              "FromPort": "80",
-              "ToPort": "80",
-              "CidrIp": {"Ref": "AllowedHttpCidr"}
-            }]
+            "IpProtocol": "tcp",
+            "FromPort": "80",
+            "ToPort": "80",
+            "CidrIp": { "Ref": "AllowedHttpCidr" }
           }
         ],
         "SecurityGroupEgress": [
@@ -820,6 +836,10 @@
   },
 
   "Outputs": {
+    "LogstashEndpoint": {
+      "Value": { "Fn::Join": ["", [ { "Fn::GetAtt": [ "ElkInternalLoadBalancer", "DNSName" ]}, ":6379"]] },
+      "Description": "Logging endpoint for Logstash TCP input"
+    },
     "KibanaURL": {
       "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },
         { "Fn::If" : [ "HasPublicDNS",
@@ -828,13 +848,13 @@
         ]}, "/"]] },
       "Description": "URL for the Kibana 4 Dashboard"
     },
-    "LogstashPrivateEndpoint": {
+    "LogstashURL": {
       "Value": { "Fn::Join": ["", ["http://",
         { "Fn::If" : [ "HasPrivateDNS",
-          {"Fn::Join": ["", [{"Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Ref": "PrivateHostedZoneName"}], ":6379"]}]]},
+          {"Fn::Join": [ ".", [ { "Fn::Join": [ "-", [ "logstash", { "Ref": "Environment"}]]}, { "Ref": "PrivateHostedZoneName"}]]},
           { "Fn::GetAtt": [ "ElkPublicLoadBalancer", "DNSName" ]}
         ]}, "/"]] },
-      "Description": "URL for the Logstash Endpoint"
+      "Description": "URL for the Kibana 4 Dashboard"
     },
     "GoogleOAuthRedirectUrl": {
       "Value": { "Fn::Join": ["", [ { "Fn::If" : [ "HasSSLCertificate", "https://", "http://" ] },

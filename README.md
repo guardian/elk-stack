@@ -5,11 +5,9 @@ This fork answers a couple of issues I encountered with the original design.
 
 Do you want to:
 
-* use ELK but not lose the features of having an Elastic search cluster over HTTP interface?
+* Use Auth0 or Google Oauth for authentication, with more providers coming (AWS Cognito, Facebook, etc. File an issue if you want it.)
 
-* use AWS's provided OAuth solution (Cognito) over an external service with 0 configuration on your part? [todo]
-
-* not deal with Authentication at all and prefer strong firewall rules to define access?
+* Not deal with Authentication at all and use strong firewall rules to define access?
 
 * use Ubuntu 16.10LTS with up to date packages
 
@@ -17,7 +15,6 @@ Do you want to:
 
 
 Then this fork is for you!
-
 
 
 ELK Stack with Google OAuth
