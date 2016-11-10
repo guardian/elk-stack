@@ -29,6 +29,7 @@ exports.setup = function (express, app, config) {
     }));
 
     app.use(function (req, res, next) {
+        var verifyApiKey = require('./auth.apikey');
         if (req.session.authenticated || nonAuthenticated(config, req.url) || verifyApiKey(config, req)) {
             return next()
         }
@@ -77,9 +78,4 @@ function findUser(profile, accessToken, config, callback) {
         console.log('access refused to: ' + username + ' (email=' + email + ';domain=' + domain + ')');
         return callback(false, username + ' is not authorized')
     }
-}
-
-function verifyApiKey(config, req) {
-    var apiKey = req.headers['authorization'] || '';
-    return (config.apiKey.length > 0 && "ApiKey " + config.apiKey === apiKey)
 }

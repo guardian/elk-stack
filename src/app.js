@@ -2,16 +2,25 @@ var express = require('express');
 var http = require('http');
 var fs = require('fs');
 var config = require('./config');
-var auth = require('./lib/auth');
 var sessions = require("client-sessions");
-
+var auth; //global var is set based on config value of oauth_strategy
 var app = express();
 
 console.log('Logcabin starting...');
 
 app.use(sessions({cookieName: 'session', secret: config.cookie_secret}));
 
-auth.setup(express, app, config);
+function selectAuthStrategy() {
+    //Using switch case here so we can support adding more strategies easily
+    switch(config.oauth_strategy) {
+        case 'auth0':
+            auth = require('./lib/auth.auth0');
+            break;
+        default:
+            auth = require('./lib/auth.google');
+    }
+}
+g_auth.setup(express, app, config);
 
 proxyES();
 proxyKibana4();
