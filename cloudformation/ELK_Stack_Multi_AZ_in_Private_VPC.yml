@@ -110,23 +110,25 @@ Conditions:
 Mappings:
   RegionMap:
     us-east-1:
-      ImageId: ami-8d4071e7
+      ImageId: ami-6edd3078
     us-west-2:
-      ImageId: ami-4b37d42b
+      ImageId: ami-7c803d1c
     us-west-1:
-      ImageId: ami-bcafdedc
+      ImageId: ami-539ac933
     eu-west-1:
-      ImageId: ami-36289a45
+      ImageId: ami-d8f4deab
     eu-central-1:
-      ImageId: ami-30677d5c
+      ImageId: ami-5aee2235
     ap-southeast-1:
-      ImageId: ami-af965fcc
+      ImageId: ami-b1943fd2
     ap-northeast-1:
-      ImageId: ami-552a2b3b
+      ImageId: ami-eb49358c
     ap-southeast-2:
-      ImageId: ami-5195b232
+      ImageId: ami-fe71759d
     sa-east-1:
-      ImageId: ami-df0586b3
+      ImageId: ami-7379e31f
+    cn-north-1:
+      ImageId: ami-b2a97edf
   InstanceMap:
     t2.medium:
       ESHeapSize: 2g
