@@ -1,0 +1,601 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: ELK Stack - Elasticsearch, Logstash, Kibana 5
+Parameters:
+  Stack:
+    Description: Stack applied as a tag
+    Type: String
+  KeyName:
+    Default: bootstrap
+    Description: Name of an existing EC2 KeyPair for SSH access
+    Type: AWS::EC2::KeyPair::KeyName
+  Stage:
+    Description: Stage applied as a tag
+    Type: String
+    Default: PROD
+    AllowedValues:
+    - PROD
+    - CODE
+    - INFRA
+    ConstraintDescription: must be a valid stage eg. PROD, CODE, INFRA
+  ElkCapacity:
+    Description: Autoscale Size
+    Type: Number
+    Default: '1'
+    MinValue: 1
+    MaxValue: 12
+  ElkInstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: m4.large
+    AllowedValues:
+    - t2.medium
+    - m4.large
+    - m4.xlarge
+    - m4.2xlarge
+    ConstraintDescription: must be a valid EC2 instance type
+  CookieSecret:
+    Description: Secret used to sign the session ID cookie ie. any random string
+    Type: String
+    NoEcho: true
+    AllowedPattern: "[a-zA-Z0-9_-]*"
+    ConstraintDescription: must only contain upper and lower case letters, numbers,
+      dashes and underscores
+  ApiKey:
+    Description: 'Api key used to make server to server request to the cluster without
+      Google OAuth, ie: any random string'
+    Type: String
+    NoEcho: true
+  GoogleOAuthClientId:
+    Description: Google OAuth 2.0 Client ID
+    Type: String
+  GoogleOAuthClientSecret:
+    Description: Google OAuth 2.0 Client Secret
+    Type: String
+    NoEcho: true
+  AllowedDomain:
+    Description: Google apps domain eg. gmail.com or example.com
+    Type: String
+    Default: guardian.co.uk
+  VpcId:
+    Description: ID of the VPC onto which to launch the application eg. vpc-1234abcd
+    Type: AWS::EC2::VPC::Id
+  PublicVpcSubnets:
+    Description: Subnets to use in VPC for public ELB eg. subnet-abcd1234
+    Type: List<AWS::EC2::Subnet::Id>
+  PrivateVpcSubnets:
+    Description: Subnets to use in VPC for instances eg. subnet-abcd1234
+    Type: List<AWS::EC2::Subnet::Id>
+  VpcIpRangeCidr:
+    Description: VPC IP range eg. 10.0.0.0/8
+    Type: String
+    Default: 0.0.0.0/0
+  AllowedSshCidr:
+    Description: IP range to allow SSH access from eg. 1.2.3.4/21
+    Type: String
+    Default: 0.0.0.0/0
+  AllowedHttpCidr:
+    Description: IP range to allow HTTP access from eg. 1.2.3.4/21
+    Type: String
+    Default: 0.0.0.0/0
+  HostedZoneName:
+    Description: Route53 Hosted Zone in which kibana aliases will be created (without
+      the trailing dot). Leave blank for no ALIAS.
+    Type: String
+    AllowedPattern: "^(.*[^.]|)$"
+  EBSVolumeSize:
+    Description: EBS storage to be attached to each instance (in GB). Set to zero
+      for no attached EBS volume (the on-instance storage will be used instead).
+    Type: Number
+    Default: 0
+    MaxValue: 1000
+    MinValue: 0
+  SnapshotRepository:
+    Description: S3 bucket name for elasticsearch snapshots repository
+    Type: String
+  IndexKeepDays:
+    Description: Keep elasticsearch indices for x number of days
+    Type: Number
+    Default: '8'
+  PublicLoadBalancerSSLCertificateARN:
+    Description: ARN of the SSL certificate applied to the public load balancer
+    Type: String
+
+Conditions:
+  HasDNS: !Not [!Equals [!Ref HostedZoneName,  '']]
+  UseEBS: !Not [!Equals [!Ref EBSVolumeSize,  '0']]
+  HasS3: !Not [!Equals [!Ref SnapshotRepository,  '']]
+  HasSSLCertificate: !Not [!Equals [!Ref PublicLoadBalancerSSLCertificateARN,  '']]
+
+Mappings:
+  RegionMap:
+    us-east-1:
+      ImageId: ami-8d4071e7
+    us-west-2:
+      ImageId: ami-4b37d42b
+    us-west-1:
+      ImageId: ami-bcafdedc
+    eu-west-1:
+      ImageId: ami-36289a45
+    eu-central-1:
+      ImageId: ami-30677d5c
+    ap-southeast-1:
+      ImageId: ami-af965fcc
+    ap-northeast-1:
+      ImageId: ami-552a2b3b
+    ap-southeast-2:
+      ImageId: ami-5195b232
+    sa-east-1:
+      ImageId: ami-df0586b3
+  InstanceMap:
+    t2.medium:
+      ESHeapSize: 2g
+    m4.large:
+      ESHeapSize: 4g
+    m4.xlarge:
+      ESHeapSize: 8g
+    m4.2xlarge:
+      ESHeapSize: 15g
+
+Resources:
+  ElkS3Bucket:
+    Type: AWS::S3::Bucket
+    Condition: HasS3
+    Properties:
+      BucketName: !Ref SnapshotRepository
+      AccessControl: Private
+  ElkS3Policy:
+    Type: AWS::IAM::Policy
+    Condition: HasS3
+    Properties:
+      PolicyName: ElkS3Policy
+      Groups: []
+      Roles:
+      - !Ref Role
+      Users: []
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Action:
+          - s3:ListBucket
+          Effect: Allow
+          Resource: !Sub 'arn:aws:s3:::${ElkS3Bucket}'
+        - Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          Effect: Allow
+          Resource: !Sub 'arn:aws:s3:::${ElkS3Bucket}/*'
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+      Policies:
+      - PolicyName: ec2-describe-instances
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Action: ec2:DescribeInstances
+            Effect: Allow
+            Resource: "*"
+  ElkKinesisPublisherRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+          Principal:
+            AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+  ElkKinesisDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: leaseKey
+        AttributeType: S
+      KeySchema:
+      - AttributeName: leaseKey
+        KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: '10'
+        WriteCapacityUnits: '5'
+  ElkKinesisStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      ShardCount: '1'
+  ElkKinesisPublisherPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: elk-kinesis-publisher
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - kinesis:PutRecord
+          - kinesis:DescribeStream
+          Resource: !Sub 'arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${ElkKinesisStream}'
+      Roles:
+      - !Ref ElkKinesisPublisherRole
+  ElkKinesisReaderPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: elk-kinesis-reader
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - dynamodb:*
+          Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ElkKinesisDynamoDBTable}'
+        - Effect: Allow
+          Action:
+          - kinesis:GetRecords
+          - kinesis:GetShardIterator
+          - kinesis:DescribeStream
+          Resource: !Sub 'arn:aws:kinesis:${AWS::Region}:${AWS::AccountId}:stream/${ElkKinesisStream}'
+        - Effect: Allow
+          Action:
+          - kinesis:ListStreams
+          Resource:
+          - "*"
+      Roles:
+      - !Ref Role
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref Role
+  ElkPublicLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      CrossZone: true
+      Listeners:
+      - Protocol:
+          Fn::If:
+          - HasSSLCertificate
+          - HTTPS
+          - HTTP
+        LoadBalancerPort:
+          Fn::If:
+          - HasSSLCertificate
+          - '443'
+          - '80'
+        InstanceProtocol: HTTP
+        InstancePort: '8080'
+        SSLCertificateId: !Ref PublicLoadBalancerSSLCertificateARN
+      HealthCheck:
+        Target: HTTP:8080/__es/
+        Timeout: '10'
+        Interval: '20'
+        UnhealthyThreshold: '10'
+        HealthyThreshold: '2'
+      Subnets: !Ref PublicVpcSubnets
+      SecurityGroups:
+      - !Ref ElkPublicLoadBalancerSecurityGroup
+  ElkInternalLoadBalancer:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Scheme: internal
+      CrossZone: true
+      Listeners:
+      - Protocol: TCP
+        LoadBalancerPort: '6379'
+        InstancePort: '6379'
+      HealthCheck:
+        Target: TCP:6379
+        Timeout: '10'
+        Interval: '20'
+        UnhealthyThreshold: '10'
+        HealthyThreshold: '2'
+      Subnets: !Ref PrivateVpcSubnets
+      SecurityGroups:
+      - !Ref ElkInternalLoadBalancerSecurityGroup
+  ElkAutoscalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AvailabilityZones:
+        Fn::GetAZs: ''
+      VPCZoneIdentifier: !Ref PrivateVpcSubnets
+      LaunchConfigurationName: !Ref ElkLaunchConfig
+      MinSize: '1'
+      MaxSize: '12'
+      DesiredCapacity: !Ref ElkCapacity
+      HealthCheckType: EC2
+      HealthCheckGracePeriod: 600
+      LoadBalancerNames:
+      - !Ref ElkPublicLoadBalancer
+      - !Ref ElkInternalLoadBalancer
+      Tags:
+      - Key: Stage
+        Value:
+          !Ref Stage
+        PropagateAtLaunch: 'true'
+      - Key: Stack
+        Value:
+          !Ref Stack
+        PropagateAtLaunch: 'true'
+      - Key: App
+        Value: kibana
+        PropagateAtLaunch: 'true'
+      - Key: Name
+        Value: kibana
+        PropagateAtLaunch: 'true'
+  ElkLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', ImageId]
+      SecurityGroups:
+      - !Ref ElkSecurityGroup
+      InstanceType:
+        !Ref ElkInstanceType
+      BlockDeviceMappings:
+      - Fn::If:
+        - UseEBS
+        - DeviceName: "/dev/sdk"
+          Ebs:
+            VolumeSize: !Ref EBSVolumeSize
+            VolumeType: gp2
+        - !Ref AWS::NoValue
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName: !Ref KeyName
+      UserData:
+        Fn::Base64: !Sub 
+        - |
+          #!/bin/bash -ev
+          
+          # Update repositories
+          wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
+          sudo apt-get install apt-transport-https
+          echo "deb https://artifacts.elastic.co/packages/5.x/apt stable main" | sudo tee -a /etc/apt/sources.list.d/elastic-5.x.list
+          echo "deb http://packages.elastic.co/curator/4/debian stable main" | sudo tee -a /etc/apt/sources.list.d/curator.list
+          apt-get -y upgrade
+          update-ca-certificates -f
+
+          # Install prerequesites
+          apt-get -y update && apt-get -y install language-pack-en ntp openjdk-8-jdk unzip libwww-perl libdatetime-perl
+
+          # Install Logstash, Elasticsearch, Kibana, etc...
+          apt-get -y update && apt-get -y install elasticsearch kibana logstash elasticsearch-curator nodejs npm 
+
+          # Configure system
+          cat >/etc/security/limits.conf << EOF
+          elasticsearch - nofile  65536
+          elasticsearch - memlock unlimited
+          EOF
+
+          # Mount Volume
+          ${MountVolume}
+          chown elasticsearch /data
+
+          # Setup free disk space monitoring
+          curl http://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.1.zip -O
+          unzip CloudWatchMonitoringScripts-1.2.1.zip -d /usr/local/bin
+          rm CloudWatchMonitoringScripts-1.2.1.zip
+          echo '*/30 * * * * root /usr/local/bin/aws-scripts-mon/mon-put-instance-data.pl --disk-space-util --disk-path=/data --from-cron' >/etc/cron.d/monitor-instance
+
+          # Install ES plugins
+          /usr/share/elasticsearch/bin/elasticsearch-plugin install x-pack --batch
+          /usr/share/elasticsearch/bin/elasticsearch-plugin install discovery-ec2 --batch
+          /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-s3 --batch
+
+          # Configure Elasticsearch
+          echo 'ES_JAVA_OPTS="-Xms${ESHeapSize} -Xmx${ESHeapSize}"' >>/etc/default/elasticsearch
+          wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml
+          sed -i \
+            -e 's,@@REGION,${AWS::Region},g' \
+            -e 's,@@STACK,${Stack},g' \
+            -e 's,@@HOST,${ElkHost},g' \
+            /etc/elasticsearch/elasticsearch.yml
+
+          # Install Kibana plugins
+          /usr/share/kibana/bin/kibana-plugin install x-pack
+          # Configure Kibana
+          cat >/etc/kibana/kibana.yml << EOF
+          xpack.security.enabled: false
+          EOF
+          # Install Logstash plugins
+          /usr/share/logstash/bin/logstash-plugin install logstash-input-kinesis
+          # Configure Logstash
+          wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf
+          sed -i \
+            -e 's,@@KINESIS_STREAM_NAME,${ElkKinesisStream},g' \
+            -e 's,@@KINESIS_APPLICATION_NAME,${ElkKinesisDynamoDBTable},g' \
+            -e 's,@@KINESIS_REGION,${AWS::Region},g' \
+            /etc/logstash/conf.d/logstash-indexer.conf
+          
+          # Install Logcabin
+          wget -O /tmp/elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/3be9a2dc131c7703a6dce31ef2bcd11de4444fec.tar.gz
+          tar zxf /tmp/elk-stack.tar.gz -C /tmp
+          mv /tmp/elk-stack-3be9a2dc131c7703a6dce31ef2bcd11de4444fec/src /opt/logcabin
+          adduser --disabled-password --gecos "" logcabin
+          cd /opt/logcabin && npm install && cd ..
+          chown -R logcabin /opt/logcabin
+          wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js
+          sed -i \
+            -e 's,@@LOGCABIN_HOST,${ElkHost},g' \
+            -e 's,@@API_KEY,${ApiKey},g' \
+            -e 's,@@COOKIE_SECRET,${CookieSecret},g' \
+            -e 's,@@CLIENT_ID,${GoogleOAuthClientId},g' \
+            -e 's,@@CLIENT_SECRET,${GoogleOAuthClientSecret},g' \
+            -e 's,@@ALLOWED_DOMAIN,${AllowedDomain},g' \
+            /opt/logcabin/config.js
+
+          # Start services
+          wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/guardian/elk-stack/master/config/systemd-logcabin.service
+          wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/guardian/elk-stack/master/config/systemd-kibana.service
+          systemctl start logstash && systemctl enable logstash
+          systemctl start elasticsearch && systemctl enable elasticsearch
+          systemctl start kibana && systemctl enable kibana
+          systemctl start logcabin && systemctl enable logcabin
+          # Setup S3 snapshot
+          ${SetupS3Snapshot}
+          # Setup schedule to delete old indexes
+          mkdir /etc/curator
+          wget -O /etc/curator/curator.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/curator/curator.yml
+
+          wget -O /etc/curator/delete-old-indexes.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/curator/delete-old-indexes.yml
+          sed -i \
+            -e 's,@@NUMBER_OF_DAYS,${IndexKeepDays},g' \
+            /etc/curator/delete-old-indexes.yml
+          echo '30 0 * * * root /usr/bin/curator --config /etc/curator/curator.yml /etc/curator/delete-old-indexes.yml' >/etc/cron.d/curator
+        - ESHeapSize: !FindInMap [InstanceMap, !Ref ElkInstanceType, ESHeapSize]
+          MountVolume: !If
+            - UseEBS
+            - !Sub |
+                mkfs.ext4 /dev/xvdk
+                mkdir /data
+                mount /dev/xvdk /data
+                echo '/dev/xvdk /data ext4 defaults 0 2' > /etc/fstab
+            - !Sub |
+                mkdir /data
+                mount /dev/xvda1 /data
+          ElkHost: !Join
+            - ''
+            - - !If [HasSSLCertificate, 'https://', 'http://']
+              - !If [HasDNS, !Sub 'kibana.${HostedZoneName}', !GetAtt ElkPublicLoadBalancer.DNSName]
+          SetupS3Snapshot: !If
+            - HasS3
+            - !Sub |
+                while ! nc -z localhost 9200; do sleep 5; done; echo Elasticsearch
+                  is up!
+                curl -XPUT 'http://localhost:9200/_snapshot/s3' -d '{ \
+                  "type": "s3", \
+                  "settings": { \
+                    "bucket": "${ElkS3Bucket}", \
+                    "region": "${AWS::Region}", \
+                  } \
+                }'
+                curl 'http://localhost:9200/_snapshot/s3?pretty'
+                wget -O /usr/local/bin/backup.sh https://raw.githubusercontent.com/guardian/elk-stack/master/scripts/backup.sh
+                chmod +x /usr/local/bin/backup.sh
+                echo '15 0 * * * root /usr/local/bin/backup.sh' >/etc/cron.d/backup
+            - ''
+
+  ElkPublicLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: Allow access to kibana on public ELB from internet
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: !Ref AllowedHttpCidr
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: '8080'
+        ToPort: '8080'
+        CidrIp: 0.0.0.0/0
+  ElkInternalLoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: Allow logstash messages to internal ELB
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '6379'
+        ToPort: '6379'
+        CidrIp: !Ref VpcIpRangeCidr
+      SecurityGroupEgress:
+      - IpProtocol: tcp
+        FromPort: '6379'
+        ToPort: '6379'
+        CidrIp: !Ref VpcIpRangeCidr
+  ElkSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow kibana from public and logstash from internal ELBs
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '6379'
+        ToPort: '6379'
+        SourceSecurityGroupId: !Ref ElkInternalLoadBalancerSecurityGroup
+      - IpProtocol: tcp
+        FromPort: '8080'
+        ToPort: '8080'
+        SourceSecurityGroupId: !Ref ElkPublicLoadBalancerSecurityGroup
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: !Ref AllowedSshCidr
+  ElkSecurityGroupIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !GetAtt ElkSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: '9300'
+      ToPort: '9400'
+      SourceSecurityGroupId: !GetAtt ElkSecurityGroup.GroupId
+  KibanaAlias:
+    Type: AWS::Route53::RecordSetGroup
+    Condition: HasDNS
+    Properties:
+      HostedZoneName: !Sub '${HostedZoneName}.'
+      Comment: Alias to kibana elb
+      RecordSets:
+      - Name: !Sub 'kibana.${HostedZoneName}'
+        Type: A
+        AliasTarget:
+          HostedZoneId: !GetAtt ElkPublicLoadBalancer.CanonicalHostedZoneNameID
+          DNSName: !GetAtt ElkPublicLoadBalancer.DNSName
+      - Name: !Sub 'logstash.${HostedZoneName}'
+        Type: A
+        AliasTarget:
+          HostedZoneId: !GetAtt ElkInternalLoadBalancer.CanonicalHostedZoneNameID
+          DNSName: !GetAtt ElkInternalLoadBalancer.DNSName
+Outputs:
+  LogstashEndpoint:
+    Value: !Join 
+      - ''
+      - - !GetAtt ElkInternalLoadBalancer.DNSName
+        - ':6379'
+    Description: Logging endpoint for Logstash TCP input
+  KibanaURL:
+    Value: !Join
+      - ''
+      - - !If
+          - HasSSLCertificate
+          - https://
+          - http://
+        - !If
+          - HasDNS
+          - !Join
+            - "."
+            - - kibana
+              - !Ref HostedZoneName
+          - !GetAtt ElkPublicLoadBalancer.DNSName
+        - "/"
+    Description: URL for the Kibana 4 Dashboard
+  GoogleOAuthRedirectUrl:
+    Value: !Join
+      - ''
+      - - !If
+          - HasSSLCertificate
+          - https://
+          - http://
+        - !If
+          - HasDNS
+          - !Join
+            - "."
+            - - kibana
+              - !Ref HostedZoneName
+          - !GetAtt ElkPublicLoadBalancer.DNSName
+        - "/auth/google/callback"
+    Description: Redirect URL for the Google Developers Console
+  KinesisStream:
+    Value: !Ref ElkKinesisStream
+  KinesisRegion:
+    Value: !Ref AWS::Region
+  KinesisRole:
+    Value: !GetAtt ElkKinesisPublisherRole.Arn

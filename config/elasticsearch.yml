@@ -71,12 +71,8 @@ cluster.name: logger
 # node.master: false
 # node.data: false
 
-# Use the Cluster Health API [http://localhost:9200/_cluster/health], the
-# Node Info API [http://localhost:9200/_nodes] or GUI tools
-# such as <http://www.elasticsearch.org/overview/marvel/>,
-# <http://github.com/karmi/elasticsearch-paramedic>,
-# <http://github.com/lukas-vlcek/bigdesk> and
-# <http://mobz.github.com/elasticsearch-head> to inspect the cluster state.
+# Use the Cluster Health API [http://localhost:9200/_cluster/health] or the
+# Node Info API [http://localhost:9200/_nodes]  to inspect the cluster state.
 
 # A node can have generic attributes associated with it, which can later be used
 # for customized shard allocation filtering, or allocation awareness. An attribute
@@ -87,58 +83,6 @@ cluster.name: logger
 # By default, multiple nodes are allowed to start from the same installation location
 # to disable it, set the following:
 # node.max_local_storage_nodes: 1
-
-
-#################################### Index ####################################
-
-# You can set a number of options (such as shard/replica options, mapping
-# or analyzer definitions, translog settings, ...) for indices globally,
-# in this file.
-#
-# Note, that it makes more sense to configure index settings specifically for
-# a certain index, either when creating it or by using the index templates API.
-#
-# See <http://elasticsearch.org/guide/en/elasticsearch/reference/current/index-modules.html> and
-# <http://elasticsearch.org/guide/en/elasticsearch/reference/current/indices-create-index.html>
-# for more information.
-
-# Set the number of shards (splits) of an index (5 by default):
-#
-index.number_of_shards: 3
-
-# Set the number of replicas (additional copies) of an index (1 by default):
-#
-index.number_of_replicas: 1
-
-# Note, that for development on a local machine, with small indices, it usually
-# makes sense to "disable" the distributed features:
-#
-# index.number_of_shards: 1
-# index.number_of_replicas: 0
-
-# These settings directly affect the performance of index and search operations
-# in your cluster. Assuming you have enough machines to hold shards and
-# replicas, the rule of thumb is:
-#
-# 1. Having more *shards* enhances the _indexing_ performance and allows to
-#    _distribute_ a big index across machines.
-# 2. Having more *replicas* enhances the _search_ performance and improves the
-#    cluster _availability_.
-#
-# The "number_of_shards" is a one-time setting for an index.
-#
-# The "number_of_replicas" can be increased or decreased anytime,
-# by using the Index Update Settings API.
-#
-# Elasticsearch takes care about load balancing, relocating, gathering the
-# results from nodes, etc. Experiment with different settings to fine-tune
-# your setup.
-
-# Use the Index Status API (<http://localhost:9200/A/_status>) to inspect
-# the index status.
-
-index.refresh_interval: 10s
-index.translog.flush_threshold: 20000
 
 #################################### Paths ####################################
 
@@ -156,10 +100,6 @@ path.conf: /etc/elasticsearch/
 #
 path.data: /data
 
-# Path to temporary files:
-#
-path.work: work
-
 # Path to log files:
 #
 path.logs: /var/log/elasticsearch/
@@ -173,25 +113,7 @@ path.logs: /var/log/elasticsearch/
 
 # If a plugin listed here is not installed for current node, the node will not start.
 #
-plugin.mandatory: cloud-aws
-
-
-################################### Memory ####################################
-
-# Elasticsearch performs poorly when JVM starts swapping: you should ensure that
-# it _never_ swaps.
-#
-# Set this property to true to lock the memory:
-#
-bootstrap.mlockall: true
-
-# Make sure that the ES_MIN_MEM and ES_MAX_MEM environment variables are set
-# to the same value, and that the machine has enough memory to allocate
-# for Elasticsearch, leaving enough memory for the operating system itself.
-#
-# You should also make sure that the Elasticsearch process is allowed to lock
-# the memory, eg. by using `ulimit -l unlimited`.
-
+plugin.mandatory: discovery-ec2, x-pack
 
 ############################## Network And HTTP ###############################
 
@@ -235,6 +157,9 @@ bootstrap.mlockall: true
 
 http.host: _local_
 network.host: _ec2_
+
+http.cors.enabled: true
+http.cors.allow-origin: @@HOST
 
 ################################### Gateway ###################################
 
@@ -341,9 +266,9 @@ indices.memory.index_buffer_size: 20%
 # See <http://elasticsearch.org/tutorials/elasticsearch-on-ec2/>
 # for a step-by-step tutorial.
 
-discovery.type: ec2
+discovery.zen.hosts_provider: ec2
 discovery.ec2.tag.Stack: "@@STACK"
-discovery.ec2.tag.App: "@@APP"
+discovery.ec2.tag.App: "kibana"
 
 cloud.aws.region: @@REGION
 
@@ -391,7 +316,9 @@ cloud.aws.region: @@REGION
 ################################# Index Actions ##############################
 
 action.auto_create_index: true
-action.disable_delete_all_indices: true
 
 ## Add breaker settings (to prevent out of memory errors)
 indices.breaker.fielddata.limit: 40%
+
+################################ X-Pack Plugin ##############################
+xpack.security.enabled: false
