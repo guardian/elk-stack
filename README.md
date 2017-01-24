@@ -1,13 +1,13 @@
 ELK Stack with Google OAuth
 ===========================
 
-ELK stands for [Elasticsearch 2][1], [Logstash 2][2] and [Kibana 4][3] and is being promoted by Elasticsearch as a "devops" logging solution.
+ELK stands for [Elasticsearch][1], [Logstash][2] and [Kibana][3]. It is being promoted by Elasticsearch as a "devops" logging solution.
 
 This implemenation of an ELK stack is designed to run in AWS EC2 VPC and is secured using Google OAuth 2.0. It consists of one or more instances behind an Elastic Load Balancer (ELB) running the following components:
 
-* Kibana 4.x
-* Elasticsearch 2.x
-* Logstash 2.x indexer
+* Kibana 5.x
+* Elasticsearch 5.x
+* Logstash 5.x indexer
 * Node.js application proxy
 
 Security
@@ -68,12 +68,9 @@ Plugins
 
 The following elasticsearch plugins are installed:
 
-  * [AWS Cloud plugin][8] - uses AWS API for the unicast discovery mechanism
-  * [elasticsearch-head][9] - web frontend for elasticsearch cluster
-
-The "head" plugin web page is available at proxied (ie. authenticated) endpoints based on how the ELK stack is deployed:
-
-  * Head      -> `http://<ELB>/__es/_plugin/head/`
+  * [X-Pack][8] - Elastic extension that bundles security, alerting, monitoring, reporting, and graph.
+  * [EC2 Discovery][9] - uses AWS API for the unicast discovery mechanism.
+  * [S3 Repository][10] - adds support for using S3 as a repository for Snapshot.
 
 Configuration
 -------------
@@ -109,6 +106,6 @@ License
 [5]: <https://console.developers.google.com> "Google Developer Console"
 [6]: <http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html> "AWS: Your VPC and Subnets"
 [7]: <https://console.aws.amazon.com/vpc/>
-[8]: <https://github.com/elastic/elasticsearch/tree/2.0/plugins/cloud-aws>
-[9]: <http://mobz.github.io/elasticsearch-head/>
-
+[8]: <https://www.elastic.co/guide/en/x-pack/current/xpack-introduction.html>
+[9]: <https://www.elastic.co/guide/en/elasticsearch/plugins/5.1/discovery-ec2.html>
+[10]: <https://www.elastic.co/guide/en/elasticsearch/plugins/current/repository-s3.html>
