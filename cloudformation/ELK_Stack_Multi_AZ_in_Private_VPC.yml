@@ -351,7 +351,7 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       KeyName: !Ref KeyName
       UserData:
-        Fn::Base64: !Sub 
+        Fn::Base64: !Sub
         - |
           #!/bin/bash -ev
           
@@ -367,7 +367,7 @@ Resources:
           apt-get -y update && apt-get -y install language-pack-en ntp openjdk-8-jdk unzip libwww-perl libdatetime-perl
 
           # Install Logstash, Elasticsearch, Kibana, etc...
-          apt-get -y update && apt-get -y install elasticsearch kibana logstash elasticsearch-curator nodejs npm 
+          apt-get -y update && apt-get -y install elasticsearch kibana logstash elasticsearch-curator nodejs npm
 
           # Configure system
           cat >/etc/security/limits.conf << EOF
@@ -490,8 +490,16 @@ Resources:
       GroupDescription: Allow access to kibana on public ELB from internet
       SecurityGroupIngress:
       - IpProtocol: tcp
-        FromPort: '80'
-        ToPort: '80'
+        FromPort:
+          Fn::If:
+          - HasSSLCertificate
+          - '443'
+          - '80'
+        ToPort:
+          Fn::If:
+          - HasSSLCertificate
+          - '443'
+          - '80'
         CidrIp: !Ref AllowedHttpCidr
       SecurityGroupEgress:
       - IpProtocol: tcp
@@ -558,7 +566,7 @@ Resources:
           DNSName: !GetAtt ElkInternalLoadBalancer.DNSName
 Outputs:
   LogstashEndpoint:
-    Value: !Join 
+    Value: !Join
       - ''
       - - !GetAtt ElkInternalLoadBalancer.DNSName
         - ':6379'
