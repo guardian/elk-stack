@@ -473,7 +473,7 @@ Resources:
                   "type": "s3", \
                   "settings": { \
                     "bucket": "${ElkS3Bucket}", \
-                    "region": "${AWS::Region}", \
+                    "region": "${AWS::Region}" \
                   } \
                 }'
                 curl 'http://localhost:9200/_snapshot/s3?pretty'
