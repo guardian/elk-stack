@@ -93,6 +93,11 @@ Parameters:
   SnapshotRepository:
     Description: S3 bucket name for elasticsearch snapshots repository
     Type: String
+  SnapshotRepositoryEncryption:
+    Description: Whether to apply server side encryption snapshots stored in S3
+    Default: true
+    Type: String
+    AllowedValues: [true, false]
   IndexKeepDays:
     Description: Keep elasticsearch indices for x number of days
     Type: Number
@@ -473,7 +478,8 @@ Resources:
                   "type": "s3", \
                   "settings": { \
                     "bucket": "${ElkS3Bucket}", \
-                    "region": "${AWS::Region}" \
+                    "region": "${AWS::Region}", \
+                    "server_side_encryption": "${SnapshotRepositoryEncryption}" \
                   } \
                 }'
                 curl 'http://localhost:9200/_snapshot/s3?pretty'
