@@ -94,7 +94,7 @@ Parameters:
     Description: S3 bucket name for elasticsearch snapshots repository
     Type: String
   SnapshotRepositoryEncryption:
-    Description: Whether to apply server side encryption snapshots stored in S3
+    Description: Whether to apply server side encryption to snapshots stored in S3
     Default: true
     Type: String
     AllowedValues: [true, false]
