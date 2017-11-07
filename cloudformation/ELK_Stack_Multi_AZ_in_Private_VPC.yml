@@ -218,10 +218,10 @@ Resources:
     Type: AWS::Kinesis::Stream
     Properties:
       ShardCount: '1'
-  ElkKinesisPublisherPolicy:
-    Type: AWS::IAM::Policy
+  ElkKinesisPublisherPolicy2:
+    Type: AWS::IAM::ManagedPolicy
     Properties:
-      PolicyName: elk-kinesis-publisher
+      Description: "Policy for allowing writes to the kinesis logging stream"
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -352,6 +352,7 @@ Resources:
           Ebs:
             VolumeSize: !Ref EBSVolumeSize
             VolumeType: gp2
+            Encrypted: true
         - !Ref AWS::NoValue
       IamInstanceProfile: !Ref InstanceProfile
       KeyName: !Ref KeyName
