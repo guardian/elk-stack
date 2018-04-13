@@ -105,6 +105,10 @@ Parameters:
   PublicLoadBalancerSSLCertificateARN:
     Description: ARN of the SSL certificate applied to the public load balancer
     Type: String
+  ElkConfigVersion:
+    Description: Git version to use when obtaining config out of Github repo (defaults to `master` which *will* break things)
+    Type: String
+    Default: master
 
 Conditions:
   HasDNS: !Not [!Equals [!Ref HostedZoneName,  '']]
@@ -362,7 +366,7 @@ Resources:
         Fn::Base64: !Sub
         - |
           #!/bin/bash -ev
-          
+
           # Update repositories
           wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | sudo apt-key add -
           sudo apt-get install apt-transport-https
@@ -400,7 +404,7 @@ Resources:
 
           # Configure Elasticsearch
           echo 'ES_JAVA_OPTS="-Xms${ESHeapSize} -Xmx${ESHeapSize}"' >>/etc/default/elasticsearch
-          wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/elasticsearch.yml
+          wget -O /etc/elasticsearch/elasticsearch.yml https://raw.githubusercontent.com/guardian/elk-stack/${ElkConfigVersion}/config/elasticsearch.yml
           sed -i \
             -e 's,@@REGION,${AWS::Region},g' \
             -e 's,@@STACK,${Stack},g' \
@@ -416,13 +420,13 @@ Resources:
           # Install Logstash plugins
           /usr/share/logstash/bin/logstash-plugin install logstash-input-kinesis
           # Configure Logstash
-          wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/master/config/logstash-indexer.conf
+          wget -O /etc/logstash/conf.d/logstash-indexer.conf https://raw.githubusercontent.com/guardian/elk-stack/${ElkConfigVersion}/config/logstash-indexer.conf
           sed -i \
             -e 's,@@KINESIS_STREAM_NAME,${ElkKinesisStream},g' \
             -e 's,@@KINESIS_APPLICATION_NAME,${ElkKinesisDynamoDBTable},g' \
             -e 's,@@KINESIS_REGION,${AWS::Region},g' \
             /etc/logstash/conf.d/logstash-indexer.conf
-          
+
           # Install Logcabin
           wget -O /tmp/elk-stack.tar.gz https://github.com/guardian/elk-stack/archive/3be9a2dc131c7703a6dce31ef2bcd11de4444fec.tar.gz
           tar zxf /tmp/elk-stack.tar.gz -C /tmp
@@ -430,7 +434,7 @@ Resources:
           adduser --disabled-password --gecos "" logcabin
           cd /opt/logcabin && npm install && cd ..
           chown -R logcabin /opt/logcabin
-          wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/master/config/config.js
+          wget -O /opt/logcabin/config.js https://raw.githubusercontent.com/guardian/elk-stack/${ElkConfigVersion}/config/config.js
           sed -i \
             -e 's,@@LOGCABIN_HOST,${ElkHost},g' \
             -e 's,@@API_KEY,${ApiKey},g' \
@@ -441,8 +445,8 @@ Resources:
             /opt/logcabin/config.js
 
           # Start services
-          wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/guardian/elk-stack/master/config/systemd-logcabin.service
-          wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/guardian/elk-stack/master/config/systemd-kibana.service
+          wget -O /etc/systemd/system/logcabin.service https://raw.githubusercontent.com/guardian/elk-stack/${ElkConfigVersion}/config/systemd-logcabin.service
+          wget -O /etc/systemd/system/kibana.service https://raw.githubusercontent.com/guardian/elk-stack/${ElkConfigVersion}/config/systemd-kibana.service
           systemctl start logstash && systemctl enable logstash
           systemctl start elasticsearch && systemctl enable elasticsearch
           systemctl start kibana && systemctl enable kibana
@@ -451,9 +455,9 @@ Resources:
           ${SetupS3Snapshot}
           # Setup schedule to delete old indexes
           mkdir /etc/curator
-          wget -O /etc/curator/curator.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/curator/curator.yml
+          wget -O /etc/curator/curator.yml https://raw.githubusercontent.com/guardian/elk-stack/${ElkConfigVersion}/config/curator/curator.yml
 
-          wget -O /etc/curator/delete-old-indexes.yml https://raw.githubusercontent.com/guardian/elk-stack/master/config/curator/delete-old-indexes.yml
+          wget -O /etc/curator/delete-old-indexes.yml https://raw.githubusercontent.com/guardian/elk-stack/${ElkConfigVersion}/config/curator/delete-old-indexes.yml
           sed -i \
             -e 's,@@NUMBER_OF_DAYS,${IndexKeepDays},g' \
             /etc/curator/delete-old-indexes.yml
@@ -486,7 +490,7 @@ Resources:
                   }
                 }'
                 curl 'http://localhost:9200/_snapshot/s3?pretty'
-                wget -O /usr/local/bin/backup.sh https://raw.githubusercontent.com/guardian/elk-stack/master/scripts/backup.sh
+                wget -O /usr/local/bin/backup.sh https://raw.githubusercontent.com/guardian/elk-stack/${ElkConfigVersion}/scripts/backup.sh
                 chmod +x /usr/local/bin/backup.sh
                 echo '15 0 * * * root /usr/local/bin/backup.sh' >/etc/cron.d/backup
             - ''
