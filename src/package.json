@@ -8,7 +8,7 @@
         "passport": "*",
         "passport-github": "*",
         "passport-google-oauth": "*",
-        "request": "2.34.x",
+        "request": "2.82.0",
         "client-sessions": "0.6.0"
     },
     "scripts": {
