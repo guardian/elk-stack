@@ -4,7 +4,7 @@
     "main": "app.js",
     "dependencies": {
         "connect-restreamer": "*",
-        "express": "3.*",
+        "express": "4.0.0",
         "passport": "*",
         "passport-github": "*",
         "passport-google-oauth": "*",
