@@ -9,7 +9,7 @@
         "passport-github": "*",
         "passport-google-oauth": "*",
         "request": "2.82.0",
-        "client-sessions": "0.6.0"
+        "client-sessions": "0.8.0"
     },
     "scripts": {
         "start": "node app"
